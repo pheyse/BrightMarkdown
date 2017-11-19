@@ -15,6 +15,12 @@ Apace V2
  - horizontal rules
  - code blocks
  
+## Changes
+ - Version 1.1.0 (2017-11-19)
+   - ignore markers for formatting like '_' if they occur within a word
+   - set font sizes of headings via method setFontSizeInMM 
+ 
+ 
 ## Usage
 ```java
 String input = "# Title\n* item 1\n* item 2\n* item 3\n\nThis text is **bold**.";

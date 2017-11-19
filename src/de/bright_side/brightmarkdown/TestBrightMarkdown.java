@@ -4,6 +4,8 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
+import de.bright_side.brightmarkdown.BrightMarkdown.FormattingItem;
+
 public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_printDocumentation() throws Exception{
@@ -397,19 +399,6 @@ public class TestBrightMarkdown {
 		assertEquals(expected, result);
 	}
 	
-
-	
-//	@Test
-//	public void test_createHTML_codeApacheLicense() throws Exception{
-//		String input = "## Apache V2:\n```\n                                 Apache License\n                           Version 2.0, January 2004\n                        http://www.apache.org/licenses/\n   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n";
-//		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
-//		String expected = "<html><body><h2>Apache V2:</h2><pre><code>                                 Apache License                           Version 2.0, January 2004                        http://www.apache.org/licenses/   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION</code></pre></body></html>";
-//		System.out.println("input:\n" + input);
-//		System.out.println("==========================");
-//		System.out.println("Result:\n" + result);
-//		assertEquals(expected, result);
-//	}
-	
 	@Test
 	public void test_createHTML_aboutText() throws Exception{
 		StringBuilder sb = new StringBuilder();
@@ -611,6 +600,52 @@ public class TestBrightMarkdown {
 		assertEquals(expected, result);
 	}
 	
+	@Test
+	public void test_createHTML_ignoreFormattingWithinWord() throws Exception{
+		String input = "# Title\nThis is time 2017_11_19__08_11 and only _this_ is formatted";
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><body><h1>Title</h1><p><span>This is time 2017_11_19__08_11 and only </span><i>this</i><span> is formatted</span></p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void test_createHTML_ignoreSingleFormattingWithinWord() throws Exception{
+		String input = "# Title\nThere is a file_name in the text";
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><body><h1>Title</h1><p><span>There is a file_name in the text</span></p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void test_createHTML_ignoreFormattingInWordWith2CharIndicator() throws Exception{
+		String input = "# Title\nThis is non__formatted_text and this is __formatted__ text.";
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><body><h1>Title</h1><p><span>This is non__formatted_text and this is </span><b>formatted</b><span> text.</span></p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_createHTML_fontSizes() throws Exception{
+		String input = "# Title\n## Title 2\nText";
+		BrightMarkdown markdown = new BrightMarkdown();
+		markdown.setFontSizeInMM(FormattingItem.H1, 40);
+		markdown.setFontSizeInMM(FormattingItem.H2, 8);
+		String result = markdown.createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><style>H1{font-size:40mm;}H2{font-size:8mm;}</style></head><body><h1>Title</h1><h2>Title 2</h2><p>Text</p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
 
 	
 }
