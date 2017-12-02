@@ -49,6 +49,17 @@ public class BrightMarkdown {
 		return toHTML(section);
 	}
 
+	/**
+	 * 
+	 * @param markdownText
+	 * @return the deepest heading which is 0 if there are no headings, and e.g. 3 if there is h1, h2 and h3
+	 * @throws Exception
+	 */
+	public int getDeepestHeading(String markdownText) throws Exception{
+		BrightMarkdownSection section = parseAll(markdownText);
+		return getDeepestHeading(section);
+	}
+	
 	public String getDocumentationAsHTML() throws Exception{
 		return new BrightMarkdown().createHTML(getDocumentationAsMarkdown()).replace("\r", "").replace("\n", "");
 	}
@@ -695,4 +706,19 @@ public class BrightMarkdown {
 	public void setFontSizeInMM(FormattingItem formattingItem, int sizeInMM){
 		fontSizesInMM.put(formattingItem, sizeInMM);		
 	}
+	
+	private int getDeepestHeading(BrightMarkdownSection section) {
+		int max = 0;
+		if (section.getType() == MDType.HEADING){
+			max = Math.max(section.getLevel(), max);
+		}
+		if (section.getChildren() != null){
+			for (BrightMarkdownSection i: section.getChildren()){
+				max = Math.max(getDeepestHeading(i), max);
+			}
+		}
+		return max;
+	}
+
+
 }

@@ -647,6 +647,32 @@ public class TestBrightMarkdown {
 		assertEquals(expected, result);
 	}
 
+	@Test
+	public void test_getDeepestHeading_normal() throws Exception{
+		String input = "# Title\n## Title 2\nText";
+		BrightMarkdown markdown = new BrightMarkdown();
+		int result = markdown.getDeepestHeading(input);
+		int expected = 2;
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_getDeepestHeading_noHeadings() throws Exception{
+		String input = "Title\n - bullet 1\n - bullet two\nmore text\n**rest** of the text";
+		BrightMarkdown markdown = new BrightMarkdown();
+		int result = markdown.getDeepestHeading(input);
+		int expected = 0;
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_getDeepestHeading_noText() throws Exception{
+		String input = "";
+		BrightMarkdown markdown = new BrightMarkdown();
+		int result = markdown.getDeepestHeading(input);
+		int expected = 0;
+		assertEquals(expected, result);
+	}
 	
 }
 
