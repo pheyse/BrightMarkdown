@@ -2,6 +2,7 @@ package de.bright_side.brightmarkdown;
 
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,13 @@ import org.w3c.dom.Element;
 
 import de.bright_side.brightmarkdown.BrightMarkdownSection.MDType;
 
+/**
+ * 
+ * @author Philip Heyse
+ * @version 1.1.2
+ * 
+ * version 1.1.2 (2017-12-08): empty lines, nested text format fix
+ */
 public class BrightMarkdown {
 	private static final String[] HEADINGS_INDICATOR = {"#", "##", "###", "####", "#####", "######"};
 	private static final String[] BULLET_POINT_INDICATORS_A = {"*", "**", "***", "****", "*****"};
@@ -137,6 +145,10 @@ public class BrightMarkdown {
 		parseRawLineEntries(section, MDType.BULLET_POINT, BULLET_POINT_INDICATORS_C, true);
 		parseRawLineEntries(section, MDType.BULLET_POINT, BULLET_POINT_INDICATORS_D, true);
 		parseRawLineEntries(section, MDType.NUMBERED_ITEM, NUMBERED_ITEM_INDICATORS, false);
+		
+		log("before parseTextParagraphs: " + toString(section));
+		parseTextParagraphs(section);
+		log("after parseTextParagraphs: " + toString(section));
 		
 		parseLinks(section);
 
@@ -263,6 +275,48 @@ public class BrightMarkdown {
 				}
 			}
 		}
+	}
+
+	private void parseTextParagraphs(BrightMarkdownSection topSection) {
+		BrightMarkdownSection paragraphSection = null;
+		List<Integer> sectionsToRemove = new ArrayList<Integer>();
+		if (topSection.getChildren() == null){
+			return;
+		}
+
+		int sectionIndex = 0;
+		for (BrightMarkdownSection section: topSection.getChildren()){
+			if ((section.getType() == MDType.RAW_LINE)){
+				if (paragraphSection == null){
+					paragraphSection = section;
+					section.setType(MDType.PARAGRAPH);
+					if (paragraphSection.getChildren() == null){
+						paragraphSection.setChildren(new ArrayList<BrightMarkdownSection>());
+					}
+				} else {
+					sectionsToRemove.add(sectionIndex);
+				}
+				BrightMarkdownSection paragraphElementSection = createSection(paragraphSection, MDType.PARAGRAPH_ELEMENT, toTrimmedNonNullString(section.getRawText()));
+				paragraphSection.getChildren().add(paragraphElementSection);
+				section.setRawText(null);
+			} else {
+				paragraphSection = null;
+			}
+			sectionIndex ++;
+		}
+		Collections.sort(sectionsToRemove);
+		Collections.reverse(sectionsToRemove);
+		for (Integer i: sectionsToRemove){
+			topSection.getChildren().remove(i.intValue());
+		}
+		
+	}
+	
+	private String toTrimmedNonNullString(String rawText) {
+		if (rawText == null){
+			return "";
+		}
+		return rawText.trim();
 	}
 
 	private void parseLinks(BrightMarkdownSection topSection) {
@@ -516,7 +570,10 @@ public class BrightMarkdown {
 		transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "" + indent);
 		StringWriter writer = new StringWriter();
 		transformer.transform(new DOMSource(document), new StreamResult(writer));
-		String result = writer.getBuffer().toString().replace("<p></p>", "").replace("<span></span>", "");
+		String result = writer.getBuffer().toString();
+		log("result before replacing empty p-tag: >>\n" + result + "\n<<");
+		result = result.replace("<p></p>", "");
+		result = result.replace("<span></span>", "");
 		result = unescape(result);
         result = result.replace(ESCAPE_NEW_LINE_IN_CODE_BLOCK, "<br/>");
 		return result;
@@ -542,78 +599,125 @@ public class BrightMarkdown {
 		while (pos < items.size()){
 			BrightMarkdownSection item = items.get(pos);
 			if (item.getType() == MDType.RAW_LINE){
-				if ((item.getChildren() != null) || (notEmpty(item.getRawText()))){
-					Element node = appendNode(rootElement, "p", null);
-					addFormattedText(node, item);
-				}
+				createHTMLNodesForRawLine(rootElement, item);
+			} else if (item.getType() == MDType.PARAGRAPH){
+				createHTMLNodesForParagraph(rootElement, item);
 			} else if (item.getType() == MDType.HEADING){
-				Element node = appendNode(rootElement, "h" + item.getLevel(), null);
-				addFormattedText(node, item);
+				addFormattedText(appendNode(rootElement, "h" + item.getLevel(), null), item);
 			} else if (item.getType() == MDType.HORIZONTAL_RULE){
 				appendNode(rootElement, "hr", null);
 			} else if (item.getType() == MDType.CODE_BLOCK){
 				Element node = appendNode(rootElement, "pre", null);
-//                setAttrib(node, "style", "word-wrap:break-word;white-space: pre-wrap;");
 				appendNode(node, "code", item.getRawText());
 			} else if (item.getType() == MDType.CHECKED_ITEM){
-				Element node = appendNode(rootElement, "input", null);
-				setAttrib(node, "type", "checkbox");
-				setAttrib(node, "disabled", "true");
-				setAttrib(node, "checked", "true");
-				addFormattedText(node, item);
-				appendNode(rootElement, "br", null);
+				createHTMLNodesForCheckedItem(rootElement, item);
 			} else if (item.getType() == MDType.UNCHECKED_ITEM){
-				Element node = appendNode(rootElement, "input", null);
-				setAttrib(node, "type", "checkbox");
-				setAttrib(node, "disabled", "true");
-				addFormattedText(node, item);
-				appendNode(rootElement, "br", null);
+				createHTMLNodesForUncheckedItem(rootElement, item);
 			} else if (item.getType() == MDType.BULLET_POINT){
-				int currentLevel = 1;
-				Map<Integer, Element> levelToListNodeMap = new TreeMap<>();
-				Element listNode = appendNode(rootElement, "ul", null);
-				levelToListNodeMap.put(currentLevel, listNode);
-				
-				while (item.getLevel() > currentLevel){
-					currentLevel ++;
-					listNode = appendNode(listNode, "ul", null);
-					levelToListNodeMap.put(currentLevel, listNode);
-				}
-				
-				Element itemNode = appendNode(listNode, "li", null);
-				addFormattedText(itemNode, item);
-				while (nextChildHasType(items, pos, MDType.BULLET_POINT)){
-					pos ++;
-					item = items.get(pos);
-					while (item.getLevel() > currentLevel){
-						currentLevel ++;
-						listNode = appendNode(listNode, "ul", null);
-						levelToListNodeMap.put(currentLevel, listNode);
-					}
-					if (item.getLevel() < currentLevel){
-						removeLowerLevels(levelToListNodeMap, item.getLevel());
-						listNode = levelToListNodeMap.get(item.getLevel());
-						currentLevel = item.getLevel();
-					}
-					
-					itemNode = appendNode(listNode, "li", null);
-					addFormattedText(itemNode, item);
-				}
+				pos = createHTMLNodesForBulletPoints(rootElement, items, pos, item);
 			} else if (item.getType() == MDType.NUMBERED_ITEM){
-				Element listNode = appendNode(rootElement, "ol", null);
-				Element itemNode = appendNode(listNode, "li", null);
-				addFormattedText(itemNode, item);
-				while (nextChildHasType(items, pos, MDType.NUMBERED_ITEM)){
-					pos ++;
-					item = items.get(pos);
-					itemNode = appendNode(listNode, "li", null);
-					addFormattedText(itemNode, item);
-				}
+				pos = createHTMLNodesForNumberedItems(rootElement, items, pos, item);
 			} else {
 				throw new Exception("Unexpected item type: " + item.getType() + ". Raw text = >>" + item.getRawText() + "<<");
 			}
 			pos ++;
 		}
+	}
+
+	private void createHTMLNodesForRawLine(Element rootElement, BrightMarkdownSection item) throws Exception {
+		if ((item.getChildren() != null) || (notEmpty(item.getRawText()))){
+			Element node = appendNode(rootElement, "p", null);
+			addFormattedText(node, item);
+		}
+	}
+
+	private void createHTMLNodesForParagraph(Element rootElement, BrightMarkdownSection item) throws Exception {
+		Element paragraphNode = appendNode(rootElement, "p", null);
+		int numberOfChildren = item.getChildren().size();
+		if (numberOfChildren == 1){
+			//: if there is only one item: no need for span and br-tags in-between
+			addFormattedText(paragraphNode, item.getChildren().get(0));
+			return;
+		}
+		
+		
+		int index = 0;
+		for (BrightMarkdownSection i: item.getChildren()){
+			Element paragraphElementNode = appendNode(paragraphNode, "span", null);
+			addFormattedText(paragraphElementNode, i);
+			
+			if (index < numberOfChildren - 1){ //: not the last item
+				appendNode(paragraphNode, "br", null);
+			}
+			
+			index ++;
+		}
+	}
+	
+	private void createHTMLNodesForUncheckedItem(Element rootElement, BrightMarkdownSection item) throws Exception {
+		Element node = appendNode(rootElement, "input", null);
+		setAttrib(node, "type", "checkbox");
+		setAttrib(node, "disabled", "true");
+		addFormattedText(node, item);
+		appendNode(rootElement, "br", null);
+	}
+
+	private void createHTMLNodesForCheckedItem(Element rootElement, BrightMarkdownSection item) throws Exception {
+		Element node = appendNode(rootElement, "input", null);
+		setAttrib(node, "type", "checkbox");
+		setAttrib(node, "disabled", "true");
+		setAttrib(node, "checked", "true");
+		addFormattedText(node, item);
+		appendNode(rootElement, "br", null);
+	}
+
+	private int createHTMLNodesForNumberedItems(Element rootElement, List<BrightMarkdownSection> items, int pos,
+			BrightMarkdownSection item) throws Exception {
+		Element listNode = appendNode(rootElement, "ol", null);
+		Element itemNode = appendNode(listNode, "li", null);
+		addFormattedText(itemNode, item);
+		while (nextChildHasType(items, pos, MDType.NUMBERED_ITEM)){
+			pos ++;
+			item = items.get(pos);
+			itemNode = appendNode(listNode, "li", null);
+			addFormattedText(itemNode, item);
+		}
+		return pos;
+	}
+
+	private int createHTMLNodesForBulletPoints(Element rootElement, List<BrightMarkdownSection> items, int pos,
+			BrightMarkdownSection item) throws Exception {
+		int currentLevel = 1;
+		Map<Integer, Element> levelToListNodeMap = new TreeMap<>();
+		Element listNode = appendNode(rootElement, "ul", null);
+		levelToListNodeMap.put(currentLevel, listNode);
+		
+		while (item.getLevel() > currentLevel){
+			currentLevel ++;
+			listNode = appendNode(listNode, "ul", null);
+			levelToListNodeMap.put(currentLevel, listNode);
+		}
+		
+		Element itemNode = appendNode(listNode, "li", null);
+		addFormattedText(itemNode, item);
+		while (nextChildHasType(items, pos, MDType.BULLET_POINT)){
+			pos ++;
+			item = items.get(pos);
+			while (item.getLevel() > currentLevel){
+				currentLevel ++;
+				listNode = appendNode(listNode, "ul", null);
+				levelToListNodeMap.put(currentLevel, listNode);
+			}
+			if (item.getLevel() < currentLevel){
+				removeLowerLevels(levelToListNodeMap, item.getLevel());
+				listNode = levelToListNodeMap.get(item.getLevel());
+				currentLevel = item.getLevel();
+			}
+			
+			itemNode = appendNode(listNode, "li", null);
+			addFormattedText(itemNode, item);
+		}
+		return pos;
 	}
 
 	private boolean notEmpty(String text) {
@@ -646,12 +750,24 @@ public class BrightMarkdown {
 		} else {
 			for (BrightMarkdownSection child: item.getChildren()){
 				if (child.getType() == MDType.BOLD){
-					log("creating bold tag with content >>" + child.getRawText() + "<<");
-					appendNodeIfConcentNotEmpty(node, "b", child.getRawText());
+					log("creating bold tag with content >>" + child.getRawText() + "<< and children: " + child.getChildren());
+					if (hasChildren(child)){
+						addFormattedText(appendNode(node, "b", null), child);
+					} else {
+						appendNodeIfConcentNotEmpty(node, "b", child.getRawText());
+					}
 				} else if (child.getType() == MDType.ITALIC){
-					appendNodeIfConcentNotEmpty(node, "i", child.getRawText());
+					if (hasChildren(child)){
+						addFormattedText(appendNode(node, "i", null), child);
+					} else {
+						appendNodeIfConcentNotEmpty(node, "i", child.getRawText());
+					}
 				} else if (child.getType() == MDType.STRIKETHROUGH){
-					appendNodeIfConcentNotEmpty(node, "strike", child.getRawText());
+					if (hasChildren(child)){
+						addFormattedText(appendNode(node, "strike", null), child);
+					} else {
+						appendNodeIfConcentNotEmpty(node, "strike", child.getRawText());
+					}
 				} else if (child.getType() == MDType.LINK){
 					if (child.getRawText() != null){
 						Element linkNode = appendNode(node, "a", child.getRawText());
@@ -675,6 +791,10 @@ public class BrightMarkdown {
 		}		
 	}
 
+	private boolean hasChildren(BrightMarkdownSection section) {
+		return (section.getChildren() != null) && (!section.getChildren().isEmpty());
+	}
+
 	private Element appendNode(Element parentElement, String tag, String content) {
 		Element child;
 		try{
@@ -695,7 +815,7 @@ public class BrightMarkdown {
 	}
 
 	private void log(String message) {
-//		System.out.println("MDLogic> " + message);
+		System.out.println("BrightMarkdown> " + message);
 	}
 
 	private Element setAttrib(Element element, String attributeName, String attributeValue) {

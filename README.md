@@ -27,6 +27,8 @@ String html = new BrightMarkdown().createHTML(input);
    - set font sizes of headings via method setFontSizeInMM 
  - Version 1.1.1 (2017-12-02)
    - function to read deepest heading level 
+ - Version 1.1.2 (2017-12-08)
+   - Bug fixes / enhancements: empty lines, nested text format fix
  
  
 

@@ -2,10 +2,17 @@ package de.bright_side.brightmarkdown;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.PrintStream;
+
 import org.junit.Test;
 
 import de.bright_side.brightmarkdown.BrightMarkdown.FormattingItem;
 
+/**
+ * 
+ * @author Philip Heyse
+ *
+ */
 public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_printDocumentation() throws Exception{
@@ -25,7 +32,7 @@ public class TestBrightMarkdown {
 	public void test_createHTML_normal() throws Exception{
 		String input = "# Title\n* item 1\n* item 2\n* item 3\n\nThis text is **bold**. Nice?";
 		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
-		String expected = "<html><body><h1>Title</h1><ul><li>item 1</li><li>item 2</li><li>item 3</li></ul><p><span>This text is </span><b>bold</b><span>. Nice?</span></p></body></html>";
+		String expected = "<html><body><h1>Title</h1><ul><li>item 1</li><li>item 2</li><li>item 3</li></ul><p><br><span><span>This text is </span><b>bold</b><span>. Nice?</span></span></p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
 		System.out.println("Result:\n" + result);
@@ -236,7 +243,7 @@ public class TestBrightMarkdown {
 	public void test_createHTML_almostHorizontalRulesInText() throws Exception{
 		String input = "Some plain text\n __\n\n ___x\n\n ___\nother text";
 		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
-		String expected = "<html><body><p>Some plain text</p><p><span> </span><span>__</span></p><p><span> </span><span>__</span><span>_x</span></p><hr><p>other text</p></body></html>";
+		String expected = "<html><body><p><span>Some plain text</span><br><span><span>__</span></span><br><br><span><span>__</span><span>_x</span></span><br></p><hr><p>other text</p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
 		System.out.println("Result:\n" + result);
@@ -247,7 +254,7 @@ public class TestBrightMarkdown {
 	public void test_createHTML_emptyBold() throws Exception{
 		String input = "Some plain text\n__x\nother text";
 		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
-		String expected = "<html><body><p>Some plain text</p><p><span>__</span><span>x</span></p><p>other text</p></body></html>";
+		String expected = "<html><body><p><span>Some plain text</span><br><span><span>__</span><span>x</span></span><br><span>other text</span></p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
 		System.out.println("Result:\n" + result);
@@ -591,12 +598,15 @@ public class TestBrightMarkdown {
 		String input = headingText + codeBlockText + footerText;
 		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
 		
-		String expected = "<html><body><h1>Fonotes</h1><p>2016-2017 by Philip Heyse - www.bright-side.de</p><h2>Used libraries and licences:</h2><ul><li>Fliesen UI: Apache V2</li>"
-				+ "<li>GSON (https://github.com/google/gson): Apache V2</li><li>Jetty (http://www.eclipse.org/jetty/): Apache V2</li></ul><h2>Apache V2:</h2>"
+		String expected = "<html><body><h1>Fonotes</h1><p><span>2016-2017 by Philip Heyse - www.bright-side.de</span><br></p><h2>Used libraries and licences:</h2><ul><li>Fliesen UI: Apache V2</li>"
+				+ "<li>GSON (https://github.com/google/gson): Apache V2</li><li>Jetty (http://www.eclipse.org/jetty/): Apache V2</li></ul><p><br><br></p><h2>Apache V2:</h2>"
 				+ "<pre><code>" + codeBlockText.replace("\n", "<br/>") + "</code></pre></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
+		System.out.println("expected:\n" + expected);
+		System.out.println("==========================");
 		System.out.println("Result:\n" + result);
+		System.out.println("==========================");
 		assertEquals(expected, result);
 	}
 	
@@ -673,6 +683,59 @@ public class TestBrightMarkdown {
 		int expected = 0;
 		assertEquals(expected, result);
 	}
+
+	@Test
+	public void test_createHTML_emptyLines() throws Exception{
+		String input = "# Title\nLine 1\nLine 2\n\nLine 3 (after empty line)";
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><body><h1>Title</h1><p><span>Line 1</span><br><span>Line 2</span><br><br><span>Line 3 (after empty line)</span></p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void test_createHTML_emptyLinesAndMoreElements() throws Exception{
+		String input = "# Title\nLine 1\nLine 2\n\nLine 3 (after empty line)\n * item 1\n * item 2\nmore text in paragraph\nlast line";
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><body><h1>Title</h1><p><span>Line 1</span><br><span>Line 2</span><br><br><span>Line 3 (after empty line)</span></p><ul><li>item 1</li><li>item 2</li></ul><p><span>more text in paragraph</span><br><span>last line</span></p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_createHTML_emptyLinesAndMoreElementsWithFormatting() throws Exception{
+		String input = "# Title\nLine 1\n_Line_ 2\n\nLine 3 (after **empty** line)\n * item 1\n * item 2\nmore text in paragraph\nlast line";
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><body><h1>Title</h1><p><span>Line 1</span><br><span><i>Line</i><span> 2</span></span><br><br><span><span>Line 3 (after </span><b>empty</b><span> line)</span></span></p><ul><li>item 1</li><li>item 2</li></ul><p><span>more text in paragraph</span><br><span>last line</span></p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_createHTML_nestedFormatting() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("# Title\n");
+		sb.append(" - item 1 \"special\" text\n");
+		sb.append(" - item 2\n");
+		sb.append("  - item 3\n");
+		sb.append(" - item 4 with \"quotes\"\n");
+		sb.append(" - **bold _italic!_ rest of bold** unformatted\n");
+		String input = sb.toString();
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><body><h1>Title</h1><ul><li>item 1 \"special\" text</li><li>item 2</li><li>item 3</li><li>item 4 with \"quotes\"</li><li><b><span>bold </span><i>italic!</i><span> rest of bold</span></b><span> unformatted</span></li></ul></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+
 	
 }
 

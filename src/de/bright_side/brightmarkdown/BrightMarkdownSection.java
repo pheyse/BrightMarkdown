@@ -2,8 +2,13 @@ package de.bright_side.brightmarkdown;
 
 import java.util.List;
 
+/**
+ * 
+ * @author Philip Heyse
+ *
+ */
 public class BrightMarkdownSection {
-	public enum MDType{ROOT, RAW_LINE, PLAIN_TEXT, HEADING, HORIZONTAL_RULE, BULLET_POINT, NUMBERED_ITEM, BOLD, ITALIC, STRIKETHROUGH, LINK, CHECKED_ITEM, UNCHECKED_ITEM, CODE_BLOCK}
+	public enum MDType{ROOT, RAW_LINE, PARAGRAPH, PARAGRAPH_ELEMENT, PLAIN_TEXT, HEADING, HORIZONTAL_RULE, BULLET_POINT, NUMBERED_ITEM, BOLD, ITALIC, STRIKETHROUGH, LINK, CHECKED_ITEM, UNCHECKED_ITEM, CODE_BLOCK}
 	private MDType type;
 	private Integer level;
 	private String rawText;
