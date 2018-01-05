@@ -217,6 +217,34 @@ public class TestBrightMarkdown {
 	}
 
 	@Test
+	public void test_createHTML_bulletPointsLevel3WithDashes() throws Exception{
+		String input = "Hello\n - item 1\n - item 2\n -- item 2.1\n -- item 2.2\n --- item 2.2.1\n --- item 2.2.2\n - item 3";
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><body><p>Hello</p><ul><li>item 1</li><li>item 2</li><ul><li>item 2.1</li><li>item 2.2</li><ul><li>item 2.2.1</li><li>item 2.2.2</li></ul></ul><li>item 3</li></ul></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_createHTML_bulletPointsLevel3Complex() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append(" - i1\n");
+		sb.append(" -- i11\n");
+		sb.append(" ... i111\n");
+		sb.append(" -- i12\n");
+		sb.append(" - i2\n");
+		String input = sb.toString();
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><body><ul><li>i1</li><ul><li>i11</li><ul><li>i111</li></ul><li>i12</li></ul><li>i2</li></ul></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
 	public void test_createHTML_bulletPointsBeginningWithLevel3() throws Exception{
 		String input = "Hello\n*** item 2.2.1\n*** item 2.2.2\n* item 3";
 		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");

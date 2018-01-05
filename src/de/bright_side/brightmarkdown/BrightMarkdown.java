@@ -25,9 +25,11 @@ import de.bright_side.brightmarkdown.BrightMarkdownSection.MDType;
 /**
  * 
  * @author Philip Heyse
- * @version 1.1.2
+ * @version 1.1.3
  * 
  * version 1.1.2 (2017-12-08): empty lines, nested text format fix
+ * version 1.1.3 (2018-01-05): Bug fix for bullet point level up
+
  */
 public class BrightMarkdown {
 	private static final String[] HEADINGS_INDICATOR = {"#", "##", "###", "####", "#####", "######"};
@@ -709,8 +711,11 @@ public class BrightMarkdown {
 				levelToListNodeMap.put(currentLevel, listNode);
 			}
 			if (item.getLevel() < currentLevel){
-				removeLowerLevels(levelToListNodeMap, item.getLevel());
+				removeDeeperLevels(levelToListNodeMap, item.getLevel());
 				listNode = levelToListNodeMap.get(item.getLevel());
+				if (listNode == null){
+					throw new RuntimeException("Could not get list node at level " + item.getLevel() + ". levels: " + levelToListNodeMap.keySet());
+				}
 				currentLevel = item.getLevel();
 			}
 			
@@ -724,14 +729,14 @@ public class BrightMarkdown {
 		return text != null && !text.isEmpty();
 	}
 
-	private void removeLowerLevels(Map<Integer, Element> levelToListNodeMap, int level) {
-		List<Integer> lowerLevels = new ArrayList<>();
+	private void removeDeeperLevels(Map<Integer, Element> levelToListNodeMap, int level) {
+		List<Integer> deeperLevels = new ArrayList<>();
 		for (int i: levelToListNodeMap.keySet()){
-			if (i < level){
-				lowerLevels.add(i);
+			if (i > level){
+				deeperLevels.add(i);
 			}
 		}
-		for (Integer i: lowerLevels){
+		for (Integer i: deeperLevels){
 			levelToListNodeMap.remove(i);
 		}
 	}
@@ -796,6 +801,9 @@ public class BrightMarkdown {
 	}
 
 	private Element appendNode(Element parentElement, String tag, String content) {
+		if (parentElement == null){
+			throw new RuntimeException("Could not add node with tag '" + tag + "' to parent element which is null");
+		}
 		Element child;
 		try{
 			child = parentElement.getOwnerDocument().createElement(tag);

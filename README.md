@@ -1,6 +1,6 @@
 # BrightMarkdown
 BrightMarkdown is a light weight java library to process markdown text.
-Created 2017 by Philip Heyse
+Created 2017-2018 by Philip Heyse
 
 ## License
 Apace V2
@@ -29,6 +29,8 @@ String html = new BrightMarkdown().createHTML(input);
    - function to read deepest heading level 
  - Version 1.1.2 (2017-12-08)
    - Bug fixes / enhancements: empty lines, nested text format fix
+ - Version 1.1.3 (2018-01-05)
+   - Bug fix for bullet point level up
  
  
 
