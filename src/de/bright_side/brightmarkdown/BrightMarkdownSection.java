@@ -8,10 +8,12 @@ import java.util.List;
  *
  */
 public class BrightMarkdownSection {
-	public enum MDType{ROOT, RAW_LINE, PARAGRAPH, PARAGRAPH_ELEMENT, PLAIN_TEXT, HEADING, HORIZONTAL_RULE, BULLET_POINT, NUMBERED_ITEM, BOLD, ITALIC, STRIKETHROUGH, LINK, CHECKED_ITEM, UNCHECKED_ITEM, CODE_BLOCK}
+	public enum MDType{ROOT, RAW_LINE, PARAGRAPH, PARAGRAPH_ELEMENT, PLAIN_TEXT, HEADING, HORIZONTAL_RULE, BULLET_POINT, NUMBERED_ITEM, BOLD, ITALIC
+		, STRIKETHROUGH, LINK, CHECKED_ITEM, UNCHECKED_ITEM, CODE_BLOCK, TABLE_OF_CONTENTS}
 	private MDType type;
 	private Integer level;
 	private String rawText;
+	private String originalPlainText;
 	private List<BrightMarkdownSection> children;
 	private BrightMarkdownSection parent;
 	private String location;
@@ -52,5 +54,10 @@ public class BrightMarkdownSection {
 	public void setLocation(String location) {
 		this.location = location;
 	}
-
+	public String getOriginalPlainText() {
+		return originalPlainText;
+	}
+	public void setOriginalPlainText(String originalPlainText) {
+		this.originalPlainText = originalPlainText;
+	}
 }

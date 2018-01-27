@@ -17,7 +17,7 @@ Apace V2
 
 ## Usage
 ```java
-String input = "# Title\n* item 1\n* item 2\n* item 3\n\nThis text is **bold**.";
+String input = "# Title\n* item 1\n* item 2\n* item 3\n\nThis text is *bold*.";
 String html = new BrightMarkdown().createHTML(input);
 ```
  
@@ -31,6 +31,8 @@ String html = new BrightMarkdown().createHTML(input);
    - Bug fixes / enhancements: empty lines, nested text format fix
  - Version 1.1.3 (2018-01-05)
    - Bug fix for bullet point level up
+ - Version 1.2.0 (2018-01-20)
+   - Simplified formatting, list levels by indent, TOC
  
  
 
