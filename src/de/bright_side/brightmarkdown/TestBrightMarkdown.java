@@ -9,7 +9,7 @@ import java.util.TreeMap;
 import org.junit.Test;
 
 import de.bright_side.brightmarkdown.BrightMarkdown.FormattingItem;
-import de.bright_side.brightmarkdown.BrightMarkdown.LevelAndTitle;
+import de.bright_side.brightmarkdown.BrightMarkdownHTMLCreator.LevelAndTitle;
 
 /**
  * 
@@ -17,6 +17,8 @@ import de.bright_side.brightmarkdown.BrightMarkdown.LevelAndTitle;
  *
  */
 public class TestBrightMarkdown {
+	private static final String TABLE_STYLE = "<style>table {border-collapse: collapse;}td, th {border: 1px solid black; padding: 3px;}th {background-color: #a0a0a0;}tr:nth-child(odd) {background-color: #d8d8d8;}tr:nth-child(even) {background-color: #ffffff;}</style>";
+
 	@Test
 	public void test_createHTML_printDocumentation() throws Exception{
 		System.out.println("Documentation:\n" + new BrightMarkdown().getDocumentationAsHTML());
@@ -1028,7 +1030,7 @@ public class TestBrightMarkdown {
 		sb.append("### heading 2.1.1\n");
 		sb.append("# heading 3\n");
 		String input = sb.toString();
-		List<LevelAndTitle> result = new BrightMarkdown().getHeadingItems(new BrightMarkdown().parseAll(input));
+		List<LevelAndTitle> result = new BrightMarkdownHTMLCreator(null).getHeadingItems(new BrightMarkdown().parseAll(input));
 		assertEquals(5, result.size());
 		assertEquals(1, result.get(0).getLevel());
 		assertEquals("heading 1", result.get(0).getTitle());
@@ -1051,7 +1053,7 @@ public class TestBrightMarkdown {
 		sb.append("### heading 2.1.1\n");
 		sb.append("# heading 3\n");
 		String input = sb.toString();
-		List<LevelAndTitle> result = new BrightMarkdown().getHeadingItems(new BrightMarkdown().parseAll(input));
+		List<LevelAndTitle> result = new BrightMarkdownHTMLCreator(null).getHeadingItems(new BrightMarkdown().parseAll(input));
 		assertEquals(5, result.size());
 		assertEquals(1, result.get(0).getLevel());
 		assertEquals("heading 1", result.get(0).getTitle());
@@ -1070,7 +1072,7 @@ public class TestBrightMarkdown {
 		StringBuilder sb = new StringBuilder();
 		sb.append("This is just some text\n");
 		String input = sb.toString();
-		List<LevelAndTitle> result = new BrightMarkdown().getHeadingItems(new BrightMarkdown().parseAll(input));
+		List<LevelAndTitle> result = new BrightMarkdownHTMLCreator(null).getHeadingItems(new BrightMarkdown().parseAll(input));
 		assertEquals(0, result.size());
 	}
 
@@ -1129,7 +1131,379 @@ public class TestBrightMarkdown {
 		System.out.println("Result:\n" + result);
 		assertEquals(expected, result);
 	}
+
 	
+	@Test
+	public void test_createHTML_table_normalNoHeader() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("My Table:\n");
+		sb.append("c1-1|c1-2|c1-3\n");
+		sb.append("c2-1|c2-2|c2-3\n");
+		sb.append("c3-1|c3-2|c3-3\n");
+		sb.append("More text...\n");
+		String input = sb.toString();
+		
+
+		System.out.println("input:\n" + input);
+//		System.out.println("==========================");
+//		System.out.println("Parsed:\n" + new BrightMarkdown().toString(new BrightMarkdown().parseAll(input)));
+		
+		
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
+		expected += TABLE_STYLE + "</head>";
+		expected += "<body><p>My Table:</p><table>";
+		expected += "<tr><td>c1-1</td><td>c1-2</td><td>c1-3</td></tr>";
+		expected += "<tr><td>c2-1</td><td>c2-2</td><td>c2-3</td></tr>";
+		expected += "<tr><td>c3-1</td><td>c3-2</td><td>c3-3</td></tr>";
+		expected += "</table><p>More text...</p></body></html>";
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void test_createHTML_table_normalWithHeader() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("My Table:\n");
+		sb.append("h-1|h-2|h-3\n");
+		sb.append("------\n");
+		sb.append("c1-1|c1-2|c1-3\n");
+		sb.append("c2-1|c2-2|c2-3\n");
+		sb.append("c3-1|c3-2|c3-3\n");
+		sb.append("More text...\n");
+		String input = sb.toString();
+		System.out.println("input:\n" + input);
+		
+		
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
+		expected += TABLE_STYLE + "</head>";
+		expected += "<body><p>My Table:</p><table>";
+		expected += "<tr><th>h-1</th><th>h-2</th><th>h-3</th></tr>";
+		expected += "<tr><td>c1-1</td><td>c1-2</td><td>c1-3</td></tr>";
+		expected += "<tr><td>c2-1</td><td>c2-2</td><td>c2-3</td></tr>";
+		expected += "<tr><td>c3-1</td><td>c3-2</td><td>c3-3</td></tr>";
+		expected += "</table><p>More text...</p></body></html>";
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_createHTML_table_normalNoHeader1Row() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("My Table:\n");
+		sb.append("c1-1|c1-2|c1-3\n");
+		sb.append("More text...\n");
+		String input = sb.toString();
+		
+
+		System.out.println("input:\n" + input);
+//		System.out.println("==========================");
+//		System.out.println("Parsed:\n" + new BrightMarkdown().toString(new BrightMarkdown().parseAll(input)));
+		
+		
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
+		expected += TABLE_STYLE + "</head>";
+		expected += "<body><p>My Table:</p><table>";
+		expected += "<tr><td>c1-1</td><td>c1-2</td><td>c1-3</td></tr>";
+		expected += "</table><p>More text...</p></body></html>";
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void test_createHTML_table_normalWithHeaderButNoRows() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("My Table:\n");
+		sb.append("h-1|h-2|h-3\n");
+		sb.append("------\n");
+		sb.append("More text...\n");
+		String input = sb.toString();
+		System.out.println("input:\n" + input);
+		
+		
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
+		expected += TABLE_STYLE + "</head>";
+		expected += "<body><p>My Table:</p><table>";
+		expected += "<tr><th>h-1</th><th>h-2</th><th>h-3</th></tr>";
+		expected += "</table><p>More text...</p></body></html>";
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void test_createHTML_table_emptyCellsMiddle() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("My Table:\n");
+		sb.append("c1-1|c1-2|c1-3\n");
+		sb.append("c2-1||c2-3\n");
+		sb.append("c3-1|c3-2|c3-3\n");
+		sb.append("More text...\n");
+		String input = sb.toString();
+		
+
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Parsed:\n" + new BrightMarkdown().toString(new BrightMarkdown().parseAll(input)));
+
+		
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
+		expected += TABLE_STYLE + "</head>";
+		expected += "<body><p>My Table:</p><table>";
+		expected += "<tr><td>c1-1</td><td>c1-2</td><td>c1-3</td></tr>";
+		expected += "<tr><td>c2-1</td><td></td><td>c2-3</td></tr>";
+		expected += "<tr><td>c3-1</td><td>c3-2</td><td>c3-3</td></tr>";
+		expected += "</table><p>More text...</p></body></html>";
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void test_createHTML_table_emptyCellsEnd() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("My Table:\n");
+		sb.append("c1-1|c1-2|c1-3\n");
+		sb.append("c2-1|c2-2|\n");
+		sb.append("c3-1|c3-2|c3-3\n");
+		sb.append("More text...\n");
+		String input = sb.toString();
+		
+
+		System.out.println("input:\n" + input);
+		
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
+		expected += TABLE_STYLE + "</head>";
+		expected += "<body><p>My Table:</p><table>";
+		expected += "<tr><td>c1-1</td><td>c1-2</td><td>c1-3</td></tr>";
+		expected += "<tr><td>c2-1</td><td>c2-2</td><td></td></tr>";
+		expected += "<tr><td>c3-1</td><td>c3-2</td><td>c3-3</td></tr>";
+		expected += "</table><p>More text...</p></body></html>";
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	
+	@Test
+	public void test_createHTML_table_missingCellsEnd() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("My Table:\n");
+		sb.append("c1-1|c1-2|c1-3\n");
+		sb.append("c2-1|c2-2\n");
+		sb.append("c3-1|c3-2|c3-3\n");
+		sb.append("More text...\n");
+		String input = sb.toString();
+		
+
+		System.out.println("input:\n" + input);
+		
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
+		expected += TABLE_STYLE + "</head>";
+		expected += "<body><p>My Table:</p><table>";
+		expected += "<tr><td>c1-1</td><td>c1-2</td><td>c1-3</td></tr>";
+		expected += "<tr><td>c2-1</td><td>c2-2</td><td></td></tr>";
+		expected += "<tr><td>c3-1</td><td>c3-2</td><td>c3-3</td></tr>";
+		expected += "</table><p>More text...</p></body></html>";
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void test_createHTML_table_emptyCellBeginning() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("My Table:\n");
+		sb.append("c1-1|c1-2|c1-3\n");
+		sb.append("|c2-2|c2-3\n");
+		sb.append("c3-1|c3-2|c3-3\n");
+		sb.append("More text...\n");
+		String input = sb.toString();
+		
+
+		System.out.println("input:\n" + input);
+		
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
+		expected += TABLE_STYLE + "</head>";
+		expected += "<body><p>My Table:</p><table>";
+		expected += "<tr><td>c1-1</td><td>c1-2</td><td>c1-3</td></tr>";
+		expected += "<tr><td></td><td>c2-2</td><td>c2-3</td></tr>";
+		expected += "<tr><td>c3-1</td><td>c3-2</td><td>c3-3</td></tr>";
+		expected += "</table><p>More text...</p></body></html>";
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	
+	@Test
+	public void test_createHTML_table_extraCellsMiddle() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("My Table:\n");
+		sb.append("c1-1|c1-2|c1-3\n");
+		sb.append("c2-1|c2-2|c2-3|c2-4\n");
+		sb.append("c3-1|c3-2|c3-3\n");
+		sb.append("More text...\n");
+		String input = sb.toString();
+		
+
+		System.out.println("input:\n" + input);
+		
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
+		expected += TABLE_STYLE + "</head>";
+		expected += "<body><p>My Table:</p><table>";
+		expected += "<tr><td>c1-1</td><td>c1-2</td><td>c1-3</td><td></td></tr>";
+		expected += "<tr><td>c2-1</td><td>c2-2</td><td>c2-3</td><td>c2-4</td></tr>";
+		expected += "<tr><td>c3-1</td><td>c3-2</td><td>c3-3</td><td></td></tr>";
+		expected += "</table><p>More text...</p></body></html>";
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void test_createHTML_table_escapeCellSeparatorInTable() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("My Table:\n");
+		sb.append("c1-1|c1-2|c1-3\n");
+		sb.append("c2-1|Hello the \\| is kept|c2-3\n");
+		sb.append("More text...\n");
+		String input = sb.toString();
+		
+
+		System.out.println("input:\n" + input);
+		
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
+		expected += TABLE_STYLE + "</head>";
+		expected += "<body><p>My Table:</p><table>";
+		expected += "<tr><td>c1-1</td><td>c1-2</td><td>c1-3</td></tr>";
+		expected += "<tr><td>c2-1</td><td>Hello the | is kept</td><td>c2-3</td></tr>";
+		expected += "</table><p>More text...</p></body></html>";
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void test_createHTML_normal_escapeCellSeparator() throws Exception{
+		String input = "# Title\nThis text is _italic_ and the \\| is kept. Nice?";
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><body><h1>Title</h1><p><span>This text is </span><i>italic</i><span> and the | is kept. Nice?</span></p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void test_createHTML_table_only1Row2Columns() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("My Table:\n");
+		sb.append("c1-1|c1-2\n");
+		sb.append("More text...\n");
+		String input = sb.toString();
+		
+
+		System.out.println("input:\n" + input);
+		
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
+		expected += TABLE_STYLE + "</head>";
+		expected += "<body><p>My Table:</p><table>";
+		expected += "<tr><td>c1-1</td><td>c1-2</td></tr>";
+		expected += "</table><p>More text...</p></body></html>";
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	
+	@Test
+	public void test_createHTML_table_withFormatting() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("My Table:\n");
+		sb.append("c1-1|c1-2|c1-3\n");
+		sb.append("c2-1|Hello *bold*|c2-3\n");
+		sb.append("More text...\n");
+		String input = sb.toString();
+		
+
+		System.out.println("input:\n" + input);
+		
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
+		expected += TABLE_STYLE + "</head>";
+		expected += "<body><p>My Table:</p><table>";
+		expected += "<tr><td>c1-1</td><td>c1-2</td><td>c1-3</td></tr>";
+		expected += "<tr><td>c2-1</td><td><span>Hello </span><b>bold</b></td><td>c2-3</td></tr>";
+		expected += "</table><p>More text...</p></body></html>";
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void test_createHTML_normal_underline() throws Exception{
+		String input = "# Title\n* item 1\n* item 2\n* item 3\n\nThis text is +underlined+. Nice?";
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><body><h1>Title</h1><ul><li>item 1</li><li>item 2</li><li>item 3</li></ul><p><br><span><span>This text is </span><u>underlined</u><span>. Nice?</span></span></p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+
+	@Test
+	public void test_createHTML_normal_BoldAndUnderline() throws Exception{
+		String input = "# Title\n* item 1\n* item 2\n* item 3\n\nThis text is *+underlined & bold+*. Nice?";
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><body><h1>Title</h1><ul><li>item 1</li><li>item 2</li><li>item 3</li></ul><p><br><span><span>This text is </span><b><u>underlined &amp; bold</u></b><span>. Nice?</span></span></p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Parsed:\n" + new BrightMarkdown().toString(new BrightMarkdown().parseAll(input)));
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_escapeSpecialCharacters_normal() throws Exception{
+		String input = "# Title\n* item 1\n* item 2\n* item 3\n\nThis text is _italic_.\n---\nNice?";
+		String result = new BrightMarkdown().escapeSpecialCharacters(input).replace("\r", "").replace("\n", "");
+		String expected = "\\# Title\\* item 1\\* item 2\\* item 3This text is \\_italic\\_\\.\\-\\-\\-Nice?";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Parsed:\n" + new BrightMarkdown().toString(new BrightMarkdown().parseAll(input)));
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_createHTML_noMarkdownTag() throws Exception{
+		String input = "{NOMARKDOWN}# Title\n* item 1\n* item 2\n* item 3\n\nThis text is _italic_.\n---\nNice?";
+		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String expected = "<html><body><p><span># Title</span><br><span>* item 1</span><br><span>* item 2</span><br><span>* item 3</span><br><br><span>This text is _italic_.</span><br><span>---</span><br><span>Nice?</span></p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Parsed:\n" + new BrightMarkdown().toString(new BrightMarkdown().parseAll(input)));
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
 	
 }
 

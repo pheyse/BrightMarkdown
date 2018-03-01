@@ -33,6 +33,10 @@ String html = new BrightMarkdown().createHTML(input);
    - Bug fix for bullet point level up
  - Version 1.2.0 (2018-01-20)
    - Simplified formatting, list levels by indent, TOC
+ - Version 1.3.0 (2018-03-03)
+   - added table feature
+   - added underline formatting
+   - tag to disable parsing
  
  
 

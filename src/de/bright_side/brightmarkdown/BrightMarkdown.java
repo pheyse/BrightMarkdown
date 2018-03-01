@@ -1,6 +1,5 @@
 package de.bright_side.brightmarkdown;
 
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -8,29 +7,20 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.StringTokenizer;
 import java.util.TreeMap;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 import de.bright_side.brightmarkdown.BrightMarkdownSection.MDType;
 
 /**
  * 
  * @author Philip Heyse
- * @version 1.2.0
+ * @version 1.3.0
  * 
  * version 1.1.2 (2017-12-08): empty lines, nested text format fix
  * version 1.1.3 (2018-01-05): Bug fix for bullet point level up
  * version 1.2.0 (2018-01-20): Simplified formatting, list levels by indent, TOC
+ * version 1.3.0 (2018-03-03): Added table feature, underline formatting and tag to disable parsing
 
  */
 public class BrightMarkdown {
@@ -44,27 +34,42 @@ public class BrightMarkdown {
 	private static final String[] UNCHECKED_ITEM_INDICATORS = {"[]", "[ ]", "- []", "- [ ]"};
 	private static final String[] CHECKED_ITEM_INDICATORS = {"[x]", "[X]", "- [x]", "- [X]"};
 	private static final String[] NUMBERED_ITEM_INDICATORS = createList(100);
-	private static final String[] HORIZONTAL_RULE_INDICATORS = {"-", "_", "#", "*"};
+	private static final String[] HORIZONTAL_RULE_INDICATORS = {"-", "_", "#", "*", "="};
 	private static final String LINK_LABEL_START = "[";
 	private static final String LINK_LABEL_END = "]";
 	private static final String LINK_LOCATION_START = "(";
 	private static final String LINK_LOCATION_END = ")";
 	private static final String TABLE_OF_CONTENT_MARKER = "{TOC}";
-	private static final String[] ESCAPE_CHARACTERS = {"\\", "b", "*", "a", "_", "u", "{", "1", "}", "2", "[", "3", "]", "4", "(", "5", ")", "6"
-			                                           , "#", "h", "+", "p", "-", "m", ".", "d", "~", "t", "`", "c", "{", "o"};
+	private static final String TABLE_CELL_SEPARATOR = "|";
+	protected static final String[] ESCAPE_CHARACTERS = {"\\", "b", "*", "a", "_", "u", "{", "1", "}", "2", "[", "3", "]", "4", "(", "5", ")", "6"
+			                                           , "#", "h", "+", "p", "-", "m", ".", "d", "~", "t", "`", "c", "{", "o", "|", "s", "=", "e"};
 	private static final String ESCAPE_MARK = "%%";
 	private static final String CODE_BLOCK_MARK = "```";
-	private static final String ESCAPE_NEW_LINE_IN_CODE_BLOCK = "%%N%%";
+	private static final String NO_MARKDOWN_MARK = "{NOMARKDOWN}";
+	protected static final String ESCAPE_NEW_LINE_IN_CODE_BLOCK = "%%N%%";
 	private static final int LIST_INDENT_LEVEL_THRESHOLD = 3;
 	
 	public static enum FormattingItem {H1, H2, H3, H4, H5, H6}
 	private Map<FormattingItem, Integer> fontSizesInMM = new EnumMap<>(FormattingItem.class);
 
 	public String createHTML(String markdownText) throws Exception{
-		BrightMarkdownSection section = parseAll(markdownText);
-		return toHTML(section);
+		BrightMarkdownSection section = parseAll(getUseMarkdownText(markdownText));
+		return new BrightMarkdownHTMLCreator(fontSizesInMM).toHTML(section);
 	}
-
+	
+	private String getUseMarkdownText(String markdownText) {
+		String useMarkdownText = "";
+		if (markdownText != null) {
+			if (markdownText.trim().startsWith(NO_MARKDOWN_MARK)) {
+				useMarkdownText = escapeSpecialCharacters(markdownText.trim().substring(NO_MARKDOWN_MARK.length()).trim());
+			} else {
+				useMarkdownText = markdownText;
+			}
+		}
+		
+		return useMarkdownText;
+	}
+	
 	/**
 	 * 
 	 * @param markdownText
@@ -72,7 +77,7 @@ public class BrightMarkdown {
 	 * @throws Exception
 	 */
 	public int getDeepestHeading(String markdownText) throws Exception{
-		BrightMarkdownSection section = parseAll(markdownText);
+		BrightMarkdownSection section = parseAll(getUseMarkdownText(markdownText));
 		return getDeepestHeading(section);
 	}
 	
@@ -105,6 +110,7 @@ public class BrightMarkdown {
 		add(sb, "## Formatting");
 		add(sb, "* use \\_text\\_ to write text in _italic_");
 		add(sb, "* use \\*text\\* to write text in *bold*");
+		add(sb, "* use \\+text\\+ to write text in +underlined+");
 		add(sb, "* use \\~text\\~ to write text in ~strike through~");
 		add(sb, "");
 		add(sb, "## Links");
@@ -115,7 +121,11 @@ public class BrightMarkdown {
 		add(sb, "");
 		add(sb, "## Horizontal rule");
 		add(sb, "* have a line that contains of 3 or more \\*\\*\\*");
-		add(sb, "* instead of \\* you can also use \\_, \\- or \\#");
+		add(sb, "* instead of \\* you can also use \\_, \\-, \\= or \\#");
+		add(sb, "");
+		add(sb, "## Tables:");
+		add(sb, "* use the \\| character to separate cells");
+		add(sb, "* place a few \\- chars underneath the first row to make it a header row");
 		add(sb, "");
 		add(sb, "## Escaping special characters");
 		add(sb, "* Place a \\\\ before a special character like \\* to escape it (ignore for processing)");
@@ -126,10 +136,25 @@ public class BrightMarkdown {
 		add(sb, "## Table of contents");
 		add(sb, "* have a line with only the text \\{TOC}");
 		add(sb, "");
+		add(sb, "## Disable processing");
+		add(sb, "* place \\{NOMARKDOWN} at the beginning of the text");
+		add(sb, "");
 		
 		return sb.toString();
 	}
 	
+	public String escapeSpecialCharacters(String text) {
+		String result = text;
+		log("text before escape: >>" + text.replace("\n", "\\n") + "<<");
+		for (int i = 0; i < ESCAPE_CHARACTERS.length; i+= 2){
+			String input = ESCAPE_CHARACTERS[i];
+			String output = "\\" + ESCAPE_CHARACTERS[i];
+			result = result.replace(input, output);
+		}
+		log("text after escape: >>" + result.replace("\n", "\\n") + "<<");
+		return result;
+	}
+
 	private void add(StringBuilder sb, String text){
 		sb.append(text + "\n");
 	}
@@ -160,6 +185,7 @@ public class BrightMarkdown {
 		parseRawLineEntries(section, MDType.BULLET_POINT, BULLET_POINT_INDICATORS_C, true);
 		parseRawLineEntries(section, MDType.BULLET_POINT, BULLET_POINT_INDICATORS_D, true);
 		parseRawLineEntries(section, MDType.NUMBERED_ITEM, NUMBERED_ITEM_INDICATORS, false);
+		parseTableRows(section);
 
 		
 		
@@ -169,12 +195,9 @@ public class BrightMarkdown {
 		
 		parseLinks(section);
 
-//		parseFormatting(section, MDType.BOLD, "__");
-//		parseFormatting(section, MDType.BOLD, "**");
 		parseFormatting(section, MDType.BOLD, "*");
+		parseFormatting(section, MDType.UNDERLINE, "+");
 		parseFormatting(section, MDType.ITALIC, "_");
-//		parseFormatting(section, MDType.ITALIC, "*");
-//		parseFormatting(section, MDType.STRIKETHROUGH, "~~");
 		parseFormatting(section, MDType.STRIKETHROUGH, "~");
 		
 		
@@ -233,19 +256,21 @@ public class BrightMarkdown {
 		log("text after escape: >>" + result.replace("\n", "\\n") + "<<");
 		return result;
 	}
-
-	private String unescape(String text) {
-		log("text before unescape: >>" + text.replace("\n", "\\n") + "<<");
+	
+	protected static String unescape(String text) {
+//		log("text before unescape: >>" + text.replace("\n", "\\n") + "<<");
 		String result = text;
 		for (int i = 0; i < ESCAPE_CHARACTERS.length; i+= 2){
 			String input = ESCAPE_MARK + ESCAPE_CHARACTERS[i + 1] + ESCAPE_MARK;
 			String output = ESCAPE_CHARACTERS[i];
 			result = result.replace(input, output);
 		}
-		log("text after unescape: >>" + result.replace("\n", "\\n") + "<<");
+//		log("text after unescape: >>" + result.replace("\n", "\\n") + "<<");
 		return result;
 	}
 	
+
+
 	private void parseHorizontalRuleEntries(BrightMarkdownSection topSection) {
 		for (String indicator: HORIZONTAL_RULE_INDICATORS){
 			String indicatorWithLength3 = indicator + indicator + indicator;
@@ -430,6 +455,46 @@ public class BrightMarkdown {
 				}
 			}
 		}
+	}
+
+	private void parseTableRows(BrightMarkdownSection topSection) {
+		for (BrightMarkdownSection section: getAllSectionsAndSubSections(topSection)){
+			if ((section.getType() == MDType.RAW_LINE) && (section.getRawText() != null) && (section.getRawText().contains(TABLE_CELL_SEPARATOR))){
+				List<String> cellTexts = readCellTexts(section.getRawText().trim());
+				section.setOriginalPlainText(removeFormatting(section.getRawText()));
+				section.setRawText(null);
+				section.setType(MDType.TABLE_ROW);
+				List<BrightMarkdownSection> children = new ArrayList<BrightMarkdownSection>();
+				for (String i: cellTexts) {
+					children.add(createSection(section, MDType.TABLE_CELL, i));
+				}
+				section.setChildren(children);
+			}
+		}
+	}
+	
+	private List<String> readCellTexts(String fullText) {
+		List<String> result = new ArrayList<String>();
+		StringTokenizer tokenizer = new StringTokenizer(fullText, TABLE_CELL_SEPARATOR, true);
+		boolean lastWasSeparator = false;
+		boolean firstItem = true;
+		while (tokenizer.hasMoreTokens()) {
+			String token = tokenizer.nextToken();
+			if (TABLE_CELL_SEPARATOR.equals(token)) {
+				if ((lastWasSeparator) || (firstItem)) {
+					result.add("");
+				}
+				lastWasSeparator = true;
+			} else {
+				lastWasSeparator = false;
+				result.add(token);
+			}
+			firstItem = false;
+		}
+		if (lastWasSeparator) {
+			result.add("");
+		}
+		return result;
 	}
 
 	private String removeFormatting(String rawText) {
@@ -709,220 +774,7 @@ public class BrightMarkdown {
 		return result.toString();
 	}
 
-	protected String toHTML(BrightMarkdownSection section) throws Exception {
-		int indent = 4;
-		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
-		Document document = docBuilder.newDocument();
-		Element rootElement = document.createElement("html");
-		document.appendChild(rootElement);
-		if (isCSSStyleSet()){
-			Element headElement = appendNode(rootElement, "head", null);
-			createCSSStyleNode(headElement);
-		}
-		
-		Element bodyElement = appendNode(rootElement, "body", null);
-		createHTMLNodes(bodyElement, section);
-		TransformerFactory transformerFactory = TransformerFactory.newInstance();
-		Transformer transformer = transformerFactory.newTransformer();
-		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-		transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "" + indent);
-		StringWriter writer = new StringWriter();
-		transformer.transform(new DOMSource(document), new StreamResult(writer));
-		String result = writer.getBuffer().toString();
-		log("result before replacing empty p-tag: >>\n" + result + "\n<<");
-		result = result.replace("<p></p>", "");
-		result = result.replace("<span></span>", "");
-		result = unescape(result);
-        result = result.replace(ESCAPE_NEW_LINE_IN_CODE_BLOCK, "<br/>");
-		return result;
-	}
-
-	private void createCSSStyleNode(Element parentElement) {
-		StringBuilder cssText = new StringBuilder();
-		for (Entry<FormattingItem, Integer> i: fontSizesInMM.entrySet()){
-			if (cssText.length() > 0){
-				cssText.append("\n");
-			}
-			cssText.append(i.getKey() + "{font-size:" + i.getValue() + "mm;}");
-		}
-		appendNode(parentElement, "style", cssText.toString());
-	}
-
-	private boolean isCSSStyleSet() {
-		return !fontSizesInMM.isEmpty();
-	}
-
-	private void createHTMLNodes(Element rootElement, BrightMarkdownSection topSection) throws Exception {
-		List<BrightMarkdownSection> items = topSection.getChildren();
-		int pos = 0;
-		while (pos < items.size()){
-			BrightMarkdownSection item = items.get(pos);
-			if (item.getType() == MDType.RAW_LINE){
-				createHTMLNodesForRawLine(rootElement, item);
-			} else if (item.getType() == MDType.PARAGRAPH){
-				createHTMLNodesForParagraph(rootElement, item);
-			} else if (item.getType() == MDType.HEADING){
-				addFormattedText(appendNode(rootElement, "h" + item.getLevel(), null), item);
-			} else if (item.getType() == MDType.HORIZONTAL_RULE){
-				appendNode(rootElement, "hr", null);
-			} else if (item.getType() == MDType.CODE_BLOCK){
-				Element node = appendNode(rootElement, "pre", null);
-				appendNode(node, "code", item.getRawText());
-			} else if (item.getType() == MDType.CHECKED_ITEM){
-				createHTMLNodesForCheckedItem(rootElement, item);
-			} else if (item.getType() == MDType.UNCHECKED_ITEM){
-				createHTMLNodesForUncheckedItem(rootElement, item);
-			} else if (item.getType() == MDType.BULLET_POINT){
-				pos = createHTMLNodesForBulletPoints(rootElement, items, pos, item);
-			} else if (item.getType() == MDType.NUMBERED_ITEM){
-				pos = createHTMLNodesForNumberedItems(rootElement, items, pos, item);
-			} else if (item.getType() == MDType.TABLE_OF_CONTENTS){
-				createHTMLNodesForTableOfContents(rootElement, topSection);
-			} else {
-				throw new Exception("Unexpected item type: " + item.getType() + ". Raw text = >>" + item.getRawText() + "<<");
-			}
-			pos ++;
-		}
-	}
-
-	private void createHTMLNodesForTableOfContents(Element rootElement, BrightMarkdownSection topSection) {
-		List<LevelAndTitle> headingItems = getHeadingItems(topSection);
-		if (headingItems == null){
-			return;
-		}
-		
-		Element root = appendNode(rootElement, "span", null);
-		Map<Integer, Element> levelToListNode = new TreeMap<Integer, Element>();
-		for (LevelAndTitle i: headingItems) {
-			Element element = getOrCreateListElement(root, levelToListNode, i.getLevel());
-			removeDeeperLevels(levelToListNode, i.getLevel());
-			appendNode(element, "li", i.getTitle());
-		}			
-	}
-
-	private Element getOrCreateListElement(Element root, Map<Integer, Element> levelToListNode, int level) {
-		Element element = levelToListNode.get(level);
-		if (element == null){
-			if (level == 1){
-				element = appendNode(root, "ul", null);
-				levelToListNode.put(level, element);
-			} else {
-				Element parentElement = levelToListNode.get(level - 1);
-				if (parentElement == null){
-					parentElement = getOrCreateListElement(root, levelToListNode, level - 1);
-				}
-				element = appendNode(parentElement, "ul", null);
-				levelToListNode.put(level, element);
-			}
-		}
-		return element;
-	}
-
-	private void createHTMLNodesForRawLine(Element rootElement, BrightMarkdownSection item) throws Exception {
-		if ((item.getChildren() != null) || (notEmpty(item.getRawText()))){
-			Element node = appendNode(rootElement, "p", null);
-			addFormattedText(node, item);
-		}
-	}
-
-	private void createHTMLNodesForParagraph(Element rootElement, BrightMarkdownSection item) throws Exception {
-		Element paragraphNode = appendNode(rootElement, "p", null);
-		int numberOfChildren = item.getChildren().size();
-		if (numberOfChildren == 1){
-			//: if there is only one item: no need for span and br-tags in-between
-			addFormattedText(paragraphNode, item.getChildren().get(0));
-			return;
-		}
-		
-		
-		int index = 0;
-		for (BrightMarkdownSection i: item.getChildren()){
-			Element paragraphElementNode = appendNode(paragraphNode, "span", null);
-			addFormattedText(paragraphElementNode, i);
-			
-			if (index < numberOfChildren - 1){ //: not the last item
-				appendNode(paragraphNode, "br", null);
-			}
-			
-			index ++;
-		}
-	}
-	
-	private void createHTMLNodesForUncheckedItem(Element rootElement, BrightMarkdownSection item) throws Exception {
-		Element node = appendNode(rootElement, "input", null);
-		setAttrib(node, "type", "checkbox");
-		setAttrib(node, "disabled", "true");
-		addFormattedText(node, item);
-		appendNode(rootElement, "br", null);
-	}
-
-	private void createHTMLNodesForCheckedItem(Element rootElement, BrightMarkdownSection item) throws Exception {
-		Element node = appendNode(rootElement, "input", null);
-		setAttrib(node, "type", "checkbox");
-		setAttrib(node, "disabled", "true");
-		setAttrib(node, "checked", "true");
-		addFormattedText(node, item);
-		appendNode(rootElement, "br", null);
-	}
-
-	private int createHTMLNodesForNumberedItems(Element rootElement, List<BrightMarkdownSection> items, int pos,
-			BrightMarkdownSection item) throws Exception {
-		Element listNode = appendNode(rootElement, "ol", null);
-		Element itemNode = appendNode(listNode, "li", null);
-		addFormattedText(itemNode, item);
-		while (nextChildHasType(items, pos, MDType.NUMBERED_ITEM)){
-			pos ++;
-			item = items.get(pos);
-			itemNode = appendNode(listNode, "li", null);
-			addFormattedText(itemNode, item);
-		}
-		return pos;
-	}
-
-	private int createHTMLNodesForBulletPoints(Element rootElement, List<BrightMarkdownSection> items, int pos,
-			BrightMarkdownSection item) throws Exception {
-		int currentLevel = 1;
-		Map<Integer, Element> levelToListNodeMap = new TreeMap<>();
-		Element listNode = appendNode(rootElement, "ul", null);
-		levelToListNodeMap.put(currentLevel, listNode);
-		
-		while (item.getLevel() > currentLevel){
-			currentLevel ++;
-			listNode = appendNode(listNode, "ul", null);
-			levelToListNodeMap.put(currentLevel, listNode);
-		}
-		
-		Element itemNode = appendNode(listNode, "li", null);
-		addFormattedText(itemNode, item);
-		while (nextChildHasType(items, pos, MDType.BULLET_POINT)){
-			pos ++;
-			item = items.get(pos);
-			while (item.getLevel() > currentLevel){
-				currentLevel ++;
-				listNode = appendNode(listNode, "ul", null);
-				levelToListNodeMap.put(currentLevel, listNode);
-			}
-			if (item.getLevel() < currentLevel){
-				removeDeeperLevels(levelToListNodeMap, item.getLevel());
-				listNode = levelToListNodeMap.get(item.getLevel());
-				if (listNode == null){
-					throw new RuntimeException("Could not get list node at level " + item.getLevel() + ". levels: " + levelToListNodeMap.keySet());
-				}
-				currentLevel = item.getLevel();
-			}
-			
-			itemNode = appendNode(listNode, "li", null);
-			addFormattedText(itemNode, item);
-		}
-		return pos;
-	}
-
-	private boolean notEmpty(String text) {
-		return text != null && !text.isEmpty();
-	}
-
-	private void removeDeeperLevels(Map<Integer, ?> levelToListNodeMap, int level) {
+	protected static void removeDeeperLevels(Map<Integer, ?> levelToListNodeMap, int level) {
 		List<Integer> deeperLevels = new ArrayList<>();
 		for (int i: levelToListNodeMap.keySet()){
 			if (i > level){
@@ -933,97 +785,11 @@ public class BrightMarkdown {
 			levelToListNodeMap.remove(i);
 		}
 	}
-
-	private boolean nextChildHasType(List<BrightMarkdownSection> items, int pos, MDType type) {
-		int checkPos = pos + 1;
-		if (checkPos >= items.size()){
-			return false;
-		}
-		return items.get(checkPos).getType() == type;
-	}
-
-	private void addFormattedText(Element node, BrightMarkdownSection item) throws Exception {
-		if (item.getRawText() != null){
-			node.setTextContent(item.getRawText());
-		} else {
-			for (BrightMarkdownSection child: item.getChildren()){
-				if (child.getType() == MDType.BOLD){
-					log("creating bold tag with content >>" + child.getRawText() + "<< and children: " + child.getChildren());
-					if (hasChildren(child)){
-						addFormattedText(appendNode(node, "b", null), child);
-					} else {
-						appendNodeIfConcentNotEmpty(node, "b", child.getRawText());
-					}
-				} else if (child.getType() == MDType.ITALIC){
-					if (hasChildren(child)){
-						addFormattedText(appendNode(node, "i", null), child);
-					} else {
-						appendNodeIfConcentNotEmpty(node, "i", child.getRawText());
-					}
-				} else if (child.getType() == MDType.STRIKETHROUGH){
-					if (hasChildren(child)){
-						addFormattedText(appendNode(node, "strike", null), child);
-					} else {
-						appendNodeIfConcentNotEmpty(node, "strike", child.getRawText());
-					}
-				} else if (child.getType() == MDType.LINK){
-					if (child.getRawText() != null){
-						Element linkNode = appendNode(node, "a", child.getRawText());
-						setAttrib(linkNode, "href", child.getLocation());
-					} else {
-						Element linkNode = appendNode(node, "a", null);
-						setAttrib(linkNode, "href", child.getLocation());
-						if (child.getChildren() != null){
-							addFormattedText(linkNode, child);
-						}
-					}
-				} else if (child.getType() == MDType.PLAIN_TEXT){
-					appendNodeIfConcentNotEmpty(node, "span", child.getRawText());
-					if (child.getChildren() != null){
-						addFormattedText(node, child);
-					}
-				} else {
-					throw new Exception("Unexpected type within text: " + child.getType());
-				}
-			}
-		}		
-	}
-
-	private boolean hasChildren(BrightMarkdownSection section) {
-		return (section.getChildren() != null) && (!section.getChildren().isEmpty());
-	}
-
-	private Element appendNode(Element parentElement, String tag, String content) {
-		if (parentElement == null){
-			throw new RuntimeException("Could not add node with tag '" + tag + "' to parent element which is null");
-		}
-		Element child;
-		try{
-			child = parentElement.getOwnerDocument().createElement(tag);
-		} catch (RuntimeException t){
-			throw new RuntimeException("Could not add node with tag '" + tag + "'", t);
-		}
-		parentElement.appendChild(child);
- 		log("setting text content >>" + content + "<<");
-		child.setTextContent(content);
-		return child;
-	}
-
-	private void appendNodeIfConcentNotEmpty(Element parentElement, String tag, String content) {
-		if ((content != null) && (!content.isEmpty())){
-			appendNode(parentElement, tag, content);
-		}
-	}
-
+	
 	private void log(String message) {
 		System.out.println("BrightMarkdown> " + message);
 	}
 
-	private Element setAttrib(Element element, String attributeName, String attributeValue) {
-		element.setAttribute(attributeName, attributeValue);
-		return element;
-	}
-	
 	public void setFontSizeInMM(FormattingItem formattingItem, int sizeInMM){
 		fontSizesInMM.put(formattingItem, sizeInMM);		
 	}
@@ -1041,39 +807,4 @@ public class BrightMarkdown {
 		return max;
 	}
 	
-	protected class LevelAndTitle{
-		private String title;
-		private int level;
-		public String getTitle() {
-			return title;
-		}
-		public void setTitle(String title) {
-			this.title = title;
-		}
-		public int getLevel() {
-			return level;
-		}
-		public void setLevel(int level) {
-			this.level = level;
-		}
-	}
-	
-	protected List<LevelAndTitle> getHeadingItems(BrightMarkdownSection section){
-		List<LevelAndTitle> result = new ArrayList<LevelAndTitle>();
-		
-		if (section.getType() == MDType.HEADING){
-			LevelAndTitle levelAndTitle = new LevelAndTitle();
-			levelAndTitle.setLevel(section.getLevel());
-			levelAndTitle.setTitle(section.getOriginalPlainText());
-			result.add(levelAndTitle);
-		}
-		if (section.getChildren() != null){
-			for (BrightMarkdownSection i: section.getChildren()){
-				result.addAll(getHeadingItems(i));
-			}
-		}
-		return result;
-	}
-
-
 }
