@@ -13,12 +13,17 @@ Apace V2
  - formatting: bold, italic, strike through
  - checkbox lists
  - horizontal rules
- - code blocks
+ - code blocks incl. syntax highlighting for Java and XML
+ - images
+ - foregorund and background color
+ 
 
 ## Usage
 ```java
 String input = "# Title\n* item 1\n* item 2\n* item 3\n\nThis text is *bold*.";
 String html = new BrightMarkdown().createHTML(input);
+
+String documentation = new BrightMarkdown().getDocumentationAsHTML();
 ```
  
 ## Change History
@@ -37,6 +42,12 @@ String html = new BrightMarkdown().createHTML(input);
    - added table feature
    - added underline formatting
    - tag to disable parsing
+ - Version 1.4.0 (2018-06-21)
+   - Images
+   - combined numbered and bullet point lists with indents
+   - text foreground and background color
+   - source code formatting: Java and XML
+   - nested formatting of bold, italic, underline and strikethrough in any order
  
  
 

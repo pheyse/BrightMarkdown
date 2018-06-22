@@ -9,7 +9,6 @@ import java.util.TreeMap;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -22,6 +21,7 @@ import de.bright_side.brightmarkdown.BrightMarkdown.FormattingItem;
 import de.bright_side.brightmarkdown.BrightMarkdownSection.MDType;
 
 public class BrightMarkdownHTMLCreator {
+	public static final String CODE_BOX_STYLE = "background:lightgrey";
 	private Map<FormattingItem, Integer> fontSizesInMM;
 
 	public BrightMarkdownHTMLCreator(Map<FormattingItem, Integer> fontSizesInMM) {
@@ -29,7 +29,6 @@ public class BrightMarkdownHTMLCreator {
 	}
 
 	protected String toHTML(BrightMarkdownSection section) throws Exception {
-		int indent = 4;
 		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
 		Document document = docBuilder.newDocument();
@@ -51,15 +50,12 @@ public class BrightMarkdownHTMLCreator {
 			}
 			
 			appendNode(headElement, "style", sb.toString());
-//			createCSSStyleNode(headElement);
 		}
 		
 		Element bodyElement = appendNode(rootElement, "body", null);
 		createHTMLNodes(bodyElement, section);
 		TransformerFactory transformerFactory = TransformerFactory.newInstance();
 		Transformer transformer = transformerFactory.newTransformer();
-		transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-		transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "" + indent);
 		StringWriter writer = new StringWriter();
 		transformer.transform(new DOMSource(document), new StreamResult(writer));
 		String result = writer.getBuffer().toString();
@@ -122,16 +118,17 @@ public class BrightMarkdownHTMLCreator {
 			} else if (item.getType() == MDType.HORIZONTAL_RULE){
 				appendNode(rootElement, "hr", null);
 			} else if (item.getType() == MDType.CODE_BLOCK){
-				Element node = appendNode(rootElement, "pre", null);
-				appendNode(node, "code", item.getRawText());
+				createHTMLNodesForCodeBlock(rootElement, item);
+//				Element node = appendNode(rootElement, "pre", null);
+//				appendNode(node, "code", item.getRawText());
 			} else if (item.getType() == MDType.CHECKED_ITEM){
 				createHTMLNodesForCheckedItem(rootElement, item);
 			} else if (item.getType() == MDType.UNCHECKED_ITEM){
 				createHTMLNodesForUncheckedItem(rootElement, item);
 			} else if (item.getType() == MDType.BULLET_POINT){
-				pos = createHTMLNodesForBulletPoints(rootElement, items, pos, item);
+				pos = createHTMLNodesForListItems(rootElement, items, pos, item);
 			} else if (item.getType() == MDType.NUMBERED_ITEM){
-				pos = createHTMLNodesForNumberedItems(rootElement, items, pos, item);
+				pos = createHTMLNodesForListItems(rootElement, items, pos, item);
 			} else if (item.getType() == MDType.TABLE_ROW){
 				pos = createHTMLNodesForTable(rootElement, items, pos, item);
 			} else if (item.getType() == MDType.TABLE_OF_CONTENTS){
@@ -141,6 +138,62 @@ public class BrightMarkdownHTMLCreator {
 			}
 			pos ++;
 		}
+	}
+	
+	private void createHTMLNodesForCodeBlock(Element parent, BrightMarkdownSection codeBlockSection) {
+		Element node = appendNode(parent, "pre", null);
+		setAttrib(node, "style", CODE_BOX_STYLE);
+		Element codeNode = appendNode(node, "code", null);
+		
+		appendNode(codeNode, "span", BrightMarkdown.ESCAPE_NEW_LINE_IN_CODE_BLOCK); //: start with a line break because otherwise the HTML indent in the first line is treated as an indent in the code
+		
+		List<BrightMarkdownSection> relevantSections = new ArrayList<>(codeBlockSection.getChildren());
+		removeLastLineBreakIfFound(relevantSections);
+		
+		for (BrightMarkdownSection section: relevantSections) {
+			log("createHTMLNodesForCodeBlock. Section = " + section + ", raw text = >>" + section.getRawText() + "<<");
+			node = appendNode(codeNode, "span", section.getRawText());
+			String style = getCodeBlockStyle(section.getType());
+			if (style != null) {
+				setAttrib(node, "style", style);
+			}
+		}
+	}
+
+	private void removeLastLineBreakIfFound(List<BrightMarkdownSection> sections) {
+		if (sections.isEmpty()) {
+			return;
+		}
+		BrightMarkdownSection listItem = sections.get(sections.size() - 1);
+		if (((listItem.getType() == MDType.CODE_BLOCK_COMMAND) || (listItem.getType() == MDType.CODE_BLOCK_COMMENT)) && (listItem.getRawText().endsWith(BrightMarkdown.ESCAPE_NEW_LINE_IN_CODE_BLOCK))){
+			listItem.setRawText(listItem.getRawText().substring(0, listItem.getRawText().length() - BrightMarkdown.ESCAPE_NEW_LINE_IN_CODE_BLOCK.length()));
+			if (listItem.getRawText().isEmpty()) {
+				sections.remove(sections.size() - 1);
+			}
+		}
+		
+	}
+
+	private String getCodeBlockStyle(MDType type) {
+		switch (type) {
+		case CODE_BLOCK_COMMAND:
+			break;
+		case CODE_BLOCK_COMMENT:
+			return "color:darkgreen";
+		case CODE_BLOCK_KEYWORD:
+			return "color:purple;font-weight:bold";
+		case CODE_BLOCK_TAG:
+			return "color:purple;font-weight:bold";
+		case CODE_BLOCK_STRING:
+			return "color:blue";
+		default:
+			break;
+		}
+		return null;
+	}
+
+	private Element appendNode(Element parentElement, String tag) {
+		return appendNode(parentElement, tag, null);
 	}
 
 	private Element appendNode(Element parentElement, String tag, String content) {
@@ -158,13 +211,6 @@ public class BrightMarkdownHTMLCreator {
 		child.setTextContent(content);
 		return child;
 	}
-
-	private void appendNodeIfConcentNotEmpty(Element parentElement, String tag, String content) {
-		if ((content != null) && (!content.isEmpty())){
-			appendNode(parentElement, tag, content);
-		}
-	}
-
 
 	private void createHTMLNodesForTableOfContents(Element rootElement, BrightMarkdownSection topSection) {
 		List<LevelAndTitle> headingItems = getHeadingItems(topSection);
@@ -246,25 +292,8 @@ public class BrightMarkdownHTMLCreator {
 		appendNode(rootElement, "br", null);
 	}
 
-	private int createHTMLNodesForNumberedItems(Element rootElement, List<BrightMarkdownSection> items, int pos, BrightMarkdownSection item) throws Exception {
-		Element listNode = appendNode(rootElement, "ol", null);
-		Element itemNode = appendNode(listNode, "li", null);
-		addFormattedText(itemNode, item);
-		while (nextChildHasType(items, pos, MDType.NUMBERED_ITEM)){
-			pos ++;
-			item = items.get(pos);
-			itemNode = appendNode(listNode, "li", null);
-			addFormattedText(itemNode, item);
-		}
-		return pos;
-	}
-
 	private int createHTMLNodesForTable(Element rootElement, List<BrightMarkdownSection> items, int pos, BrightMarkdownSection item) throws Exception {
 		Element tableNode = appendNode(rootElement, "table", null);
-//		setAttrib(tableNode, "style", "border: 1px solid");
-//		setAttrib(tableNode, "border", "1");
-//		setAttrib(tableNode, "cellspacing", "0");
-
 		boolean firstRowIsHeader = false;
 		
 		List<BrightMarkdownSection> tableItems = new ArrayList<BrightMarkdownSection>();
@@ -314,28 +343,37 @@ public class BrightMarkdownHTMLCreator {
 		}
 		return result;
 	}
+	
+	private String getHTMLListTag(MDType type) {
+		if (type == MDType.BULLET_POINT) {
+			return "ul";
+		} else {
+			return "ol";
+		}
+	}
 
-	private int createHTMLNodesForBulletPoints(Element rootElement, List<BrightMarkdownSection> items, int pos,
-			BrightMarkdownSection item) throws Exception {
+	private int createHTMLNodesForListItems(Element rootElement, List<BrightMarkdownSection> items, int pos, BrightMarkdownSection item) throws Exception {
 		int currentLevel = 1;
 		Map<Integer, Element> levelToListNodeMap = new TreeMap<>();
-		Element listNode = appendNode(rootElement, "ul", null);
+		String listTag = getHTMLListTag(item.getType());
+		Element listNode = appendNode(rootElement, listTag, null);
 		levelToListNodeMap.put(currentLevel, listNode);
 		
 		while (item.getLevel() > currentLevel){
 			currentLevel ++;
-			listNode = appendNode(listNode, "ul", null);
+			listNode = appendNode(listNode, listTag, null);
 			levelToListNodeMap.put(currentLevel, listNode);
 		}
 		
 		Element itemNode = appendNode(listNode, "li", null);
 		addFormattedText(itemNode, item);
-		while (nextChildHasType(items, pos, MDType.BULLET_POINT)){
+		while (nextChildHasType(items, pos, MDType.BULLET_POINT, MDType.NUMBERED_ITEM)){
 			pos ++;
 			item = items.get(pos);
+			listTag = getHTMLListTag(item.getType());
 			while (item.getLevel() > currentLevel){
 				currentLevel ++;
-				listNode = appendNode(listNode, "ul", null);
+				listNode = appendNode(listNode, listTag, null);
 				levelToListNodeMap.put(currentLevel, listNode);
 			}
 			if (item.getLevel() < currentLevel){
@@ -358,32 +396,7 @@ public class BrightMarkdownHTMLCreator {
 			node.setTextContent(item.getRawText());
 		} else {
 			for (BrightMarkdownSection child: item.getChildren()){
-				if (child.getType() == MDType.BOLD){
-					log("creating bold tag with content >>" + child.getRawText() + "<< and children: " + child.getChildren());
-					if (hasChildren(child)){
-						addFormattedText(appendNode(node, "b", null), child);
-					} else {
-						appendNodeIfConcentNotEmpty(node, "b", child.getRawText());
-					}
-				} else if (child.getType() == MDType.ITALIC){
-					if (hasChildren(child)){
-						addFormattedText(appendNode(node, "i", null), child);
-					} else {
-						appendNodeIfConcentNotEmpty(node, "i", child.getRawText());
-					}
-				} else if (child.getType() == MDType.UNDERLINE){
-					if (hasChildren(child)){
-						addFormattedText(appendNode(node, "u", null), child);
-					} else {
-						appendNodeIfConcentNotEmpty(node, "u", child.getRawText());
-					}
-				} else if (child.getType() == MDType.STRIKETHROUGH){
-					if (hasChildren(child)){
-						addFormattedText(appendNode(node, "strike", null), child);
-					} else {
-						appendNodeIfConcentNotEmpty(node, "strike", child.getRawText());
-					}
-				} else if (child.getType() == MDType.LINK){
+				if (child.getType() == MDType.LINK){
 					if (child.getRawText() != null){
 						Element linkNode = appendNode(node, "a", child.getRawText());
 						setAttrib(linkNode, "href", child.getLocation());
@@ -394,18 +407,103 @@ public class BrightMarkdownHTMLCreator {
 							addFormattedText(linkNode, child);
 						}
 					}
-				} else if (child.getType() == MDType.PLAIN_TEXT){
-					appendNodeIfConcentNotEmpty(node, "span", child.getRawText());
-					if (child.getChildren() != null){
-						addFormattedText(node, child);
+				} else if (child.getType() == MDType.IMAGE){
+					Element imageNode = appendNode(node, "img");
+					setAttrib(imageNode, "src", child.getLocation());
+					if (child.getImageHeight() != null) {
+						setAttrib(imageNode, "height", child.getImageHeight());
+					}
+					if (child.getImageWidth() != null) {
+						setAttrib(imageNode, "width", child.getImageWidth());
+					}
+					if (child.getImageAltText() != null) {
+						setAttrib(imageNode, "alt", child.getImageAltText());
 					}
 				} else {
-					throw new Exception("Unexpected type within text: " + child.getType());
+					Element currentNode = node;
+					if (child.isBold()) {
+						currentNode = appendNode(currentNode, "b");
+					}
+					if (child.isItalic()) {
+						currentNode = appendNode(currentNode, "i");
+					}
+					if (child.isUnderline()) {
+						currentNode = appendNode(currentNode, "u");
+					}
+					if (child.isStrikeThrough()) {
+						currentNode = appendNode(currentNode, "strike");
+					}
+					if (child.getColor() != null) {
+						currentNode = appendNode(currentNode, "span");
+						setAttrib(currentNode, "style", "color:" + child.getColor());
+					}
+					if (child.getBackgroundColor() != null) {
+						currentNode = appendNode(currentNode, "span");
+						setAttrib(currentNode, "style", "background-color:" + child.getBackgroundColor());
+					}
+					if (currentNode == node) { //: there is no formatting and no sub-node has been created, then create a sub node for the text
+						currentNode = appendNode(currentNode, "span");
+					}
+
+					currentNode.setTextContent(child.getRawText());
 				}
 			}
 		}		
 	}
 	
+//	private void addFormattedText(Element node, BrightMarkdownSection item) throws Exception {
+//		if (item.getRawText() != null){
+//			node.setTextContent(item.getRawText());
+//		} else {
+//			for (BrightMarkdownSection child: item.getChildren()){
+//				if (child.getType() == MDType.BOLD){
+//					log("creating bold tag with content >>" + child.getRawText() + "<< and children: " + child.getChildren());
+//					if (hasChildren(child)){
+//						addFormattedText(appendNode(node, "b", null), child);
+//					} else {
+//						appendNodeIfConcentNotEmpty(node, "b", child.getRawText());
+//					}
+//				} else if (child.getType() == MDType.ITALIC){
+//					if (hasChildren(child)){
+//						addFormattedText(appendNode(node, "i", null), child);
+//					} else {
+//						appendNodeIfConcentNotEmpty(node, "i", child.getRawText());
+//					}
+//				} else if (child.getType() == MDType.UNDERLINE){
+//					if (hasChildren(child)){
+//						addFormattedText(appendNode(node, "u", null), child);
+//					} else {
+//						appendNodeIfConcentNotEmpty(node, "u", child.getRawText());
+//					}
+//				} else if (child.getType() == MDType.STRIKETHROUGH){
+//					if (hasChildren(child)){
+//						addFormattedText(appendNode(node, "strike", null), child);
+//					} else {
+//						appendNodeIfConcentNotEmpty(node, "strike", child.getRawText());
+//					}
+//				} else if (child.getType() == MDType.LINK){
+//					if (child.getRawText() != null){
+//						Element linkNode = appendNode(node, "a", child.getRawText());
+//						setAttrib(linkNode, "href", child.getLocation());
+//					} else {
+//						Element linkNode = appendNode(node, "a", null);
+//						setAttrib(linkNode, "href", child.getLocation());
+//						if (child.getChildren() != null){
+//							addFormattedText(linkNode, child);
+//						}
+//					}
+//				} else if (child.getType() == MDType.PLAIN_TEXT){
+//					appendNodeIfConcentNotEmpty(node, "span", child.getRawText());
+//					if (child.getChildren() != null){
+//						addFormattedText(node, child);
+//					}
+//				} else {
+//					throw new Exception("Unexpected type within text: " + child.getType());
+//				}
+//			}
+//		}		
+//	}
+//	
 	private boolean nextChildHasType(List<BrightMarkdownSection> items, int pos, MDType type) {
 		int checkPos = pos + 1;
 		if (checkPos >= items.size()){
@@ -414,10 +512,15 @@ public class BrightMarkdownHTMLCreator {
 		return items.get(checkPos).getType() == type;
 	}
 
-
-	private boolean hasChildren(BrightMarkdownSection section) {
-		return (section.getChildren() != null) && (!section.getChildren().isEmpty());
+	private boolean nextChildHasType(List<BrightMarkdownSection> items, int pos, MDType typeA, MDType typeB) {
+		int checkPos = pos + 1;
+		if (checkPos >= items.size()){
+			return false;
+		}
+		MDType type = items.get(checkPos).getType();
+		return (type == typeA) || (type == typeB);
 	}
+	
 
 	private Element setAttrib(Element element, String attributeName, String attributeValue) {
 		element.setAttribute(attributeName, attributeValue);

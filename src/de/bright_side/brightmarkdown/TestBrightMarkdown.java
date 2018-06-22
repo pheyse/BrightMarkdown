@@ -19,6 +19,10 @@ import de.bright_side.brightmarkdown.BrightMarkdownHTMLCreator.LevelAndTitle;
 public class TestBrightMarkdown {
 	private static final String TABLE_STYLE = "<style>table {border-collapse: collapse;}td, th {border: 1px solid black; padding: 3px;}th {background-color: #a0a0a0;}tr:nth-child(odd) {background-color: #d8d8d8;}tr:nth-child(even) {background-color: #ffffff;}</style>";
 
+	private String removeFormatting(String htmlString) {
+		return htmlString.replace("\r", "").replace("\n", "").replace("    ", "");
+	}	
+
 	@Test
 	public void test_createHTML_printDocumentation() throws Exception{
 		System.out.println("Documentation:\n" + new BrightMarkdown().getDocumentationAsHTML());
@@ -36,7 +40,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_normal_bold() throws Exception{
 		String input = "# Title\n* item 1\n* item 2\n* item 3\n\nThis text is *bold*. Nice?";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><h1>Title</h1><ul><li>item 1</li><li>item 2</li><li>item 3</li></ul><p><br><span><span>This text is </span><b>bold</b><span>. Nice?</span></span></p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -47,7 +51,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_normal_italic() throws Exception{
 		String input = "# Title\n* item 1\n* item 2\n* item 3\n\nThis text is _italic_. Nice?";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><h1>Title</h1><ul><li>item 1</li><li>item 2</li><li>item 3</li></ul><p><br><span><span>This text is </span><i>italic</i><span>. Nice?</span></span></p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -59,7 +63,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_specialCharacters() throws Exception{
 		String input = "# Title\nHello! Special: <>&?";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><h1>Title</h1><p>Hello! Special: &lt;&gt;&amp;?</p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -70,7 +74,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_noText() throws Exception{
 		String input = "";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -81,7 +85,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_noMarkdown() throws Exception{
 		String input = "Simple Text";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><p>Simple Text</p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -92,7 +96,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_onlyBold() throws Exception{
 		String input = "*Only Bold*";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><p><b>Only Bold</b></p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -103,7 +107,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_textAndStrikeThrough() throws Exception{
 		String input = "Hello ~strike through~ there";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><p><span>Hello </span><strike>strike through</strike><span> there</span></p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -114,7 +118,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_onlyHeading() throws Exception{
 		String input = "## my title";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><h2>my title</h2></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -125,7 +129,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_headingsOnDifferentLevels() throws Exception{
 		String input = "# my title 1\n## my title 2\n### my title 3\n# other";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><h1>my title 1</h1><h2>my title 2</h2><h3>my title 3</h3><h1>other</h1></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -136,7 +140,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_headingWithPartItalic() throws Exception{
 		String input = "## Title with _italic_ part\nbla";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><h2><span>Title with </span><i>italic</i><span> part</span></h2><p>bla</p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -147,7 +151,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_fullTextBulletPoints() throws Exception{
 		String input = "* item 1\n* item 2\n. item 3";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><ul><li>item 1</li><li>item 2</li><li>item 3</li></ul></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -158,19 +162,8 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_bulletPointsWithPartBold() throws Exception{
 		String input = "* item 1\n* item 2 with *bold* text\n. item 3";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><ul><li>item 1</li><li><span>item 2 with </span><b>bold</b><span> text</span></li><li>item 3</li></ul></body></html>";
-		System.out.println("input:\n" + input);
-		System.out.println("==========================");
-		System.out.println("Result:\n" + result);
-		assertEquals(expected, result);
-	}
-	
-	@Test
-	public void test_createHTML_numberedList() throws Exception{
-		String input = "# My List\n1. item 1\n2. item 2\n2. item 3";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
-		String expected = "<html><body><h1>My List</h1><ol><li>item 1</li><li>item 2</li><li>item 3</li></ol></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
 		System.out.println("Result:\n" + result);
@@ -180,7 +173,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_plainTextBulletPointsPlainText() throws Exception{
 		String input = "Some plain text\n* item 1\n* item 2 with text\n. item 3\nmore plain text";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><p>Some plain text</p><ul><li>item 1</li><li>item 2 with text</li><li>item 3</li></ul><p>more plain text</p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -191,7 +184,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_checkBoxes() throws Exception{
 		String input = "Some plain text\n[] box 1\n[x] box 2\n[ ] box 3";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><p>Some plain text</p><input disabled=\"true\" type=\"checkbox\">box 1</input><br><input checked=\"true\" disabled=\"true\" type=\"checkbox\">box 2</input><br><input disabled=\"true\" type=\"checkbox\">box 3</input><br></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -202,7 +195,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_checkBoxesWithDifferentSyntax() throws Exception{
 		String input = "Some plain text\n - [] box 1\n - [x] box 2\n - [ ] box 3";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><p>Some plain text</p><input disabled=\"true\" type=\"checkbox\">box 1</input><br><input checked=\"true\" disabled=\"true\" type=\"checkbox\">box 2</input><br><input disabled=\"true\" type=\"checkbox\">box 3</input><br></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -213,7 +206,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_bulletPointsOnDifferentLevelsNormal() throws Exception{
 		String input = "Hello\n* item 1\n* item 2\n** item 2.1\n** item 2.2\n* item 3";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><p>Hello</p><ul><li>item 1</li><li>item 2</li><ul><li>item 2.1</li><li>item 2.2</li></ul><li>item 3</li></ul></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -224,7 +217,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_bulletPointsLevelDownAndTwoLevelsUp() throws Exception{
 		String input = "Hello\n* item 1\n* item 2\n** item 2.1\n** item 2.2\n*** item 2.2.1\n*** item 2.2.2\n* item 3";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><p>Hello</p><ul><li>item 1</li><li>item 2</li><ul><li>item 2.1</li><li>item 2.2</li><ul><li>item 2.2.1</li><li>item 2.2.2</li></ul></ul><li>item 3</li></ul></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -235,25 +228,8 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_bulletPointsLevel3WithDashes() throws Exception{
 		String input = "Hello\n - item 1\n - item 2\n -- item 2.1\n -- item 2.2\n --- item 2.2.1\n --- item 2.2.2\n - item 3";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><p>Hello</p><ul><li>item 1</li><li>item 2</li><ul><li>item 2.1</li><li>item 2.2</li><ul><li>item 2.2.1</li><li>item 2.2.2</li></ul></ul><li>item 3</li></ul></body></html>";
-		System.out.println("input:\n" + input);
-		System.out.println("==========================");
-		System.out.println("Result:\n" + result);
-		assertEquals(expected, result);
-	}
-	
-	@Test
-	public void test_createHTML_bulletPointsLevel3Complex() throws Exception{
-		StringBuilder sb = new StringBuilder();
-		sb.append(" - i1\n");
-		sb.append(" -- i11\n");
-		sb.append(" ... i111\n");
-		sb.append(" -- i12\n");
-		sb.append(" - i2\n");
-		String input = sb.toString();
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
-		String expected = "<html><body><ul><li>i1</li><ul><li>i11</li><ul><li>i111</li></ul><li>i12</li></ul><li>i2</li></ul></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
 		System.out.println("Result:\n" + result);
@@ -263,7 +239,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_bulletPointsBeginningWithLevel3() throws Exception{
 		String input = "Hello\n*** item 2.2.1\n*** item 2.2.2\n* item 3";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><p>Hello</p><ul><ul><ul><li>item 2.2.1</li><li>item 2.2.2</li></ul></ul><li>item 3</li></ul></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -275,7 +251,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_horizontalRuleInText() throws Exception{
 		String input = "Some plain text\n --------\nother text";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><p>Some plain text</p><hr><p>other text</p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -286,8 +262,8 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_almostHorizontalRulesInText() throws Exception{
 		String input = "Some plain text\n __\n\n ___x\n\n ___\nother text";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
-		String expected = "<html><body><p><span>Some plain text</span><br><span><span>__</span></span><br><br><span><span>__</span><span>_x</span></span><br></p><hr><p>other text</p></body></html>";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><p><span>Some plain text</span><br><span>__</span><br><br><span><i>x</i></span><br></p><hr><p>other text</p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
 		System.out.println("Result:\n" + result);
@@ -297,19 +273,8 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_emptyBold() throws Exception{
 		String input = "Some plain text\n**x\nother text";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
-		String expected = "<html><body><p><span>Some plain text</span><br><span><span>**</span><span>x</span></span><br><span>other text</span></p></body></html>";
-		System.out.println("input:\n" + input);
-		System.out.println("==========================");
-		System.out.println("Result:\n" + result);
-		assertEquals(expected, result);
-	}
-	
-	@Test
-	public void test_createHTML_doubleBold() throws Exception{
-		String input = "Some plain text then **double** bold";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
-		String expected = "<html><body><p><span>Some plain text then </span><span>**</span><span>double** bold</span></p></body></html>";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><p><span>Some plain text</span><br><span>**x</span><br><span>other text</span></p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
 		System.out.println("Result:\n" + result);
@@ -319,8 +284,8 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_emptyItalic() throws Exception{
 		String input = "Some plain text\n__x\nother text";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
-		String expected = "<html><body><p><span>Some plain text</span><br><span><span>__</span><span>x</span></span><br><span>other text</span></p></body></html>";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><p><span>Some plain text</span><br><span>__x</span><br><span>other text</span></p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
 		System.out.println("Result:\n" + result);
@@ -330,8 +295,8 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_emptyItalicOnly() throws Exception{
 		String input = "__";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
-		String expected = "<html><body><p><span>__</span></p></body></html>";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><p>__</p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
 		System.out.println("Result:\n" + result);
@@ -339,9 +304,9 @@ public class TestBrightMarkdown {
 	}
 	
 	@Test
-	public void test_createHTML_linkInText() throws Exception{
+	public void test_createHTML_linkInTextSquareRoundBrackets() throws Exception{
 		String input = "this is a [link](www.wikipedia.de) and more text";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><p><span>this is a </span><a href=\"www.wikipedia.de\">link</a><span> and more text</span></p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -350,9 +315,44 @@ public class TestBrightMarkdown {
 	}
 	
 	@Test
+	public void test_createHTML_linkInTextSquareBrackets() throws Exception{
+		String input = "this is a [link][www.wikipedia.de] and more text";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><p><span>this is a </span><a href=\"www.wikipedia.de\">link</a><span> and more text</span></p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void test_createHTML_linkInTextRoundBrackets() throws Exception{
+		String input = "this is a (link)(www.wikipedia.de) and more text";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><p><span>this is a </span><a href=\"www.wikipedia.de\">link</a><span> and more text</span></p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_createHTML_linkInTextRoundAndSquareBrackets() throws Exception{
+		String input = "this is a (link)[www.wikipedia.de] and more text";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><p><span>this is a </span><a href=\"www.wikipedia.de\">link</a><span> and more text</span></p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+
+	
+	@Test
 	public void test_createHTML_linkOnly() throws Exception{
 		String input = "[link](www.wikipedia.de)";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><p><a href=\"www.wikipedia.de\">link</a></p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -363,9 +363,11 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_linkInBulletPoints() throws Exception{
 		String input = "Title\n - bullet 1 with [link](www.wikipedia.de)\n - bullet two\nmore text";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><p>Title</p><ul><li><span>bullet 1 with </span><a href=\"www.wikipedia.de\">link</a></li><li>bullet two</li></ul><p>more text</p></body></html>";
 		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Parsed:\n" + new BrightMarkdown().toString(new BrightMarkdown().parseAll(input)));
 		System.out.println("==========================");
 		System.out.println("Result:\n" + result);
 		assertEquals(expected, result);
@@ -374,7 +376,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_linkWithFormattedText() throws Exception{
 		String input = "this is a [link with *formatted* text](www.wikipedia.de) and more text";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><p><span>this is a </span><a href=\"www.wikipedia.de\"><span>link with </span><b>formatted</b><span> text</span></a><span> and more text</span></p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -385,8 +387,8 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_almostLink() throws Exception{
 		String input = "this is a not a [link www.wikipedia.de) and more text";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
-		String expected = "<html><body><p><span>this is a not a </span><span>[link www.wikipedia.de)</span><span> and more text</span></p></body></html>";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><p>this is a not a [link www.wikipedia.de) and more text</p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
 		System.out.println("Result:\n" + result);
@@ -396,7 +398,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_escapeChars() throws Exception{
 		String input = "# Title\nThis text is *bold*. And this _italic_ and this is \\*escaped\\*. Nice?";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><h1>Title</h1><p><span>This text is </span><b>bold</b><span>. And this </span><i>italic</i><span> and this is *escaped*. Nice?</span></p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -404,73 +406,6 @@ public class TestBrightMarkdown {
 		assertEquals(expected, result);
 	}
 
-	@Test
-	public void test_createHTML_codeBlock() throws Exception{
-		String input = "Title\n - bullet 1\n - bullet two\nmore text\n```\nsome source code\nnext line\nint a = 7;\nint b = 5;\n```\nrest of the text";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
-		String expected = "<html><body><p>Title</p><ul><li>bullet 1</li><li>bullet two</li></ul><p>more text</p><pre><code>some source code<br/>next line<br/>int a = 7;<br/>int b = 5;<br/></code></pre><p>rest of the text</p></body></html>";
-		System.out.println("input:\n" + input);
-		System.out.println("==========================");
-		System.out.println("Result:\n" + result);
-		assertEquals(expected, result);
-	}
-	
-	@Test
-	public void test_createHTML_codeBlockWithIndentedText() throws Exception{
-		String input = "Title\n - bullet 1\n - bullet two\nmore text\n```\nsome source code\nnext line\n    int a = 7;\n    int b = 5;\n```\nrest of the text";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
-		String expected = "<html><body><p>Title</p><ul><li>bullet 1</li><li>bullet two</li></ul><p>more text</p><pre><code>some source code<br/>next line<br/>    int a = 7;<br/>    int b = 5;<br/></code></pre><p>rest of the text</p></body></html>";
-		System.out.println("input:\n" + input);
-		System.out.println("==========================");
-		System.out.println("Result:\n" + result);
-		System.out.println("Result (incl. new lines):\n" + new BrightMarkdown().createHTML(input));
-		assertEquals(expected, result);
-	}
-	
-	@Test
-	public void test_createHTML_codeBlockUnclosed() throws Exception{
-		String input = "Title\n - bullet 1\n - bullet two\nmore text\n```\nsome source code\nnext line\nint a = 7;\nint b = 5;";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
-		String expected = "<html><body><p>Title</p><ul><li>bullet 1</li><li>bullet two</li></ul><p>more text</p><pre><code>some source code<br/>next line<br/>int a = 7;<br/>int b = 5;<br/></code></pre></body></html>";
-		System.out.println("input:\n" + input);
-		System.out.println("==========================");
-		System.out.println("Result:\n" + result);
-		assertEquals(expected, result);
-	}
-	
-	@Test
-	public void test_createHTML_codeBlockOnly() throws Exception{
-		String input = "```\nsome source code\nnext line\nint a = 7;\nint b = 5;\n```";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
-		String expected = "<html><body><pre><code>some source code<br/>next line<br/>int a = 7;<br/>int b = 5;<br/></code></pre></body></html>";
-		System.out.println("input:\n" + input);
-		System.out.println("==========================");
-		System.out.println("Result:\n" + result);
-		assertEquals(expected, result);
-	}
-	
-	@Test
-	public void test_createHTML_codeWithIgnoredLanguage() throws Exception{
-		String input = "```java\nsome source code\nnext line\nint a = 7;\nint b = 5;\n```";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
-		String expected = "<html><body><pre><code>some source code<br/>next line<br/>int a = 7;<br/>int b = 5;<br/></code></pre></body></html>";
-		System.out.println("input:\n" + input);
-		System.out.println("==========================");
-		System.out.println("Result:\n" + result);
-		assertEquals(expected, result);
-	}
-	
-	@Test
-	public void test_createHTML_codeBlockWithBracketsLikeALink() throws Exception{
-		String input = "Title\n - bullet 1\n - bullet two\nmore text\n```\nsome source code\nnext line\nThis is text with [brackets][like a link]\n```\nrest of the text";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
-		String expected = "<html><body><p>Title</p><ul><li>bullet 1</li><li>bullet two</li></ul><p>more text</p><pre><code>some source code<br/>next line<br/>This is text with [brackets][like a link]<br/></code></pre><p>rest of the text</p></body></html>";
-		System.out.println("input:\n" + input);
-		System.out.println("==========================");
-		System.out.println("Result:\n" + result);
-		System.out.println("Result (incl. new lines):\n" + new BrightMarkdown().createHTML(input));
-		assertEquals(expected, result);
-	}
 	
 	@Test
 	public void test_createHTML_aboutText() throws Exception{
@@ -662,24 +597,28 @@ public class TestBrightMarkdown {
 		String footerText = sb.toString();
 		
 		String input = headingText + codeBlockText + footerText;
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+
+		String codeBlockTextUse = codeBlockText.replace("\n", "<br/>");
+		codeBlockTextUse = codeBlockTextUse.substring(0, codeBlockTextUse.length() - "<br/>".length());
 		
 		String expected = "<html><body><h1>Fonotes</h1><p><span>2016-2017 by Philip Heyse - www.bright-side.de</span><br></p><h2>Used libraries and licences:</h2><ul><li>Fliesen UI: Apache V2</li>"
 				+ "<li>GSON (https://github.com/google/gson): Apache V2</li><li>Jetty (http://www.eclipse.org/jetty/): Apache V2</li></ul><p><br><br></p><h2>Apache V2:</h2>"
-				+ "<pre><code>" + codeBlockText.replace("\n", "<br/>") + "</code></pre></body></html>";
+				+ "<pre style=\"" + BrightMarkdownHTMLCreator.CODE_BOX_STYLE + "\"><code><span><br/></span><span>" + codeBlockTextUse + "</span></code></pre></body></html>";
+		expected = removeFormatting(expected);
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
 		System.out.println("expected:\n" + expected);
 		System.out.println("==========================");
 		System.out.println("Result:\n" + result);
 		System.out.println("==========================");
-		assertEquals(expected, result);
+		assertEquals(expected.replace(">", ">\n"), result.replace(">", ">\n"));
 	}
 	
 	@Test
 	public void test_createHTML_ignoreFormattingWithinWord() throws Exception{
 		String input = "# Title\nThis is time 2017_11_19__08_11 and only _this_ is formatted";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><h1>Title</h1><p><span>This is time 2017_11_19__08_11 and only </span><i>this</i><span> is formatted</span></p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -690,8 +629,8 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_ignoreSingleFormattingWithinWord() throws Exception{
 		String input = "# Title\nThere is a file_name in the text";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
-		String expected = "<html><body><h1>Title</h1><p><span>There is a file_name in the text</span></p></body></html>";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><h1>Title</h1><p>There is a file_name in the text</p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
 		System.out.println("Result:\n" + result);
@@ -701,7 +640,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_ignoreFormattingInWordWith2CharIndicator() throws Exception{
 		String input = "# Title\nThis is non__formatted_text and this is _formatted_ text.";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><h1>Title</h1><p><span>This is non__formatted_text and this is </span><i>formatted</i><span> text.</span></p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -715,7 +654,7 @@ public class TestBrightMarkdown {
 		BrightMarkdown markdown = new BrightMarkdown();
 		markdown.setFontSizeInMM(FormattingItem.H1, 40);
 		markdown.setFontSizeInMM(FormattingItem.H2, 8);
-		String result = markdown.createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(markdown.createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"><style>H1{font-size:40mm;}H2{font-size:8mm;}</style></head><body><h1>Title</h1><h2>Title 2</h2><p>Text</p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -753,7 +692,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_emptyLines() throws Exception{
 		String input = "# Title\nLine 1\nLine 2\n\nLine 3 (after empty line)";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><h1>Title</h1><p><span>Line 1</span><br><span>Line 2</span><br><br><span>Line 3 (after empty line)</span></p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -764,7 +703,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_emptyLinesAndMoreElements() throws Exception{
 		String input = "# Title\nLine 1\nLine 2\n\nLine 3 (after empty line)\n * item 1\n * item 2\nmore text in paragraph\nlast line";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><h1>Title</h1><p><span>Line 1</span><br><span>Line 2</span><br><br><span>Line 3 (after empty line)</span></p><ul><li>item 1</li><li>item 2</li></ul><p><span>more text in paragraph</span><br><span>last line</span></p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -775,7 +714,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_emptyLinesAndMoreElementsWithFormatting() throws Exception{
 		String input = "# Title\nLine 1\n_Line_ 2\n\nLine 3 (after *empty* line)\n * item 1\n * item 2\nmore text in paragraph\nlast line";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><h1>Title</h1><p><span>Line 1</span><br><span><i>Line</i><span> 2</span></span><br><br><span><span>Line 3 (after </span><b>empty</b><span> line)</span></span></p><ul><li>item 1</li><li>item 2</li></ul><p><span>more text in paragraph</span><br><span>last line</span></p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -793,14 +732,79 @@ public class TestBrightMarkdown {
 		sb.append(" - item 4 with \"quotes\"\n");
 		sb.append(" - *bold _italic!_ rest of bold* unformatted\n");
 		String input = sb.toString();
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
-		String expected = "<html><body><h1>Title</h1><ul><li>item 1 \"special\" text</li><li>item 2</li><li>item 3</li><li>item 4 with \"quotes\"</li><li><b><span>bold </span><i>italic!</i><span> rest of bold</span></b><span> unformatted</span></li></ul></body></html>";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><h1>Title</h1><ul><li>item 1 \"special\" text</li><li>item 2</li><li>item 3</li><li>item 4 with \"quotes\"</li><li><b>bold </b><b><i>italic!</i></b><b> rest of bold</b><span> unformatted</span></li></ul></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
 		System.out.println("Result:\n" + result);
 		assertEquals(expected, result);
 	}
 
+	@Test
+	public void test_createHTML_nestedFormattingItalicInBold() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("*bold _italic!_ rest of bold* unformatted\n");
+		String input = sb.toString();
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><p><b>bold </b><b><i>italic!</i></b><b> rest of bold</b><span> unformatted</span></p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void test_createHTML_nestedFormattingColorInItalic() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("_italic {c:red}red!{c} rest of italic_ unformatted\n");
+		String input = sb.toString();
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><p><i>italic </i><i><span style=\"color:red\">red!</span></i><i> rest of italic</i><span> unformatted</span></p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_createHTML_nestedFormattingBackgroundColorInItalic() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("_italic {bc:red}red!{bc} rest of italic_ unformatted\n");
+		String input = sb.toString();
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><p><i>italic </i><i><span style=\"background-color:red\">red!</span></i><i> rest of italic</i><span> unformatted</span></p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_createHTML_nestedFormattingBoldInItalic() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("_italic *bold!* rest of italic_ unformatted\n");
+		String input = sb.toString();
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><p><i>italic </i><b><i>bold!</i></b><i> rest of italic</i><span> unformatted</span></p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_createHTML_nestedFormattingBoldAndUnderlineInItalic() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("_italic *bold! +and underline+* rest of italic_ unformatted\n");
+		String input = sb.toString();
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><p><i>italic </i><b><i>bold! </i></b><b><i><u>and underline</u></i></b><i> rest of italic</i><span> unformatted</span></p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
 	@Test
 	public void test_findMatchingLevel_normal() throws Exception{
 		Map<Integer, Integer> levelToIndentMap = new TreeMap<Integer, Integer>();
@@ -835,42 +839,37 @@ public class TestBrightMarkdown {
 	}
 
 	@Test
-	public void test_readBulletPointAndIndentLength_multipleCases() throws Exception{
+	public void test_findPosAfterLeadindSpaces_multipleCases() throws Exception{
 		BrightMarkdown md = new BrightMarkdown();
-		assertEquals(1, md.readBulletPointAndIndentLength("*"));
-		assertEquals(2, md.readBulletPointAndIndentLength("* "));
-		assertEquals(2, md.readBulletPointAndIndentLength("* text"));
-		assertEquals(3, md.readBulletPointAndIndentLength(" * text"));
-		assertEquals(5, md.readBulletPointAndIndentLength(" *   text"));
-		assertEquals(6, md.readBulletPointAndIndentLength("  *   text"));
-		assertEquals(4, md.readBulletPointAndIndentLength("  - item 3"));
-		assertEquals(5, md.readBulletPointAndIndentLength(" *   "));
-		assertEquals(0, md.readBulletPointAndIndentLength("**"));
-		assertEquals(0, md.readBulletPointAndIndentLength("** text"));
-		assertEquals(0, md.readBulletPointAndIndentLength(" ** text"));
-		assertEquals(0, md.readBulletPointAndIndentLength("x"));
-		assertEquals(0, md.readBulletPointAndIndentLength(" x"));
+		assertEquals(1, md.findPosAfterLeadindSpaces("*", 0));
+		assertEquals(2, md.findPosAfterLeadindSpaces("* ", 0));
+		assertEquals(2, md.findPosAfterLeadindSpaces("* text", 0));
+		assertEquals(3, md.findPosAfterLeadindSpaces(" * text", 1));
+		assertEquals(5, md.findPosAfterLeadindSpaces(" *   text", 1));
+		assertEquals(6, md.findPosAfterLeadindSpaces("  *   text", 2));
+		assertEquals(4, md.findPosAfterLeadindSpaces("  - item 3", 2));
+		assertEquals(5, md.findPosAfterLeadindSpaces(" *   ", 1));
 	}
 
 	@Test
 	public void test_readListItemIndet_multipleCases() throws Exception{
+		List<String> icl = BrightMarkdown.BULLET_POINT_INDICATORS_CHARS_LIST;
 		BrightMarkdown md = new BrightMarkdown();
-		assertEquals(0, md.readListItemIndet("*").intValue());
-		assertEquals(0, md.readListItemIndet("* ").intValue());
-		assertEquals(0, md.readListItemIndet("* text").intValue());
-		assertEquals(1, md.readListItemIndet(" * text").intValue());
-		assertEquals(1, md.readListItemIndet(" *   text").intValue());
-		assertEquals(2, md.readListItemIndet("  *   text").intValue());
-		assertEquals(1, md.readListItemIndet(" *   ").intValue());
-		assertEquals(null, md.readListItemIndet("**"));
-		assertEquals(null, md.readListItemIndet("** text"));
-		assertEquals(null, md.readListItemIndet(" ** text"));
-		assertEquals(null, md.readListItemIndet("x"));
-		assertEquals(null, md.readListItemIndet(" x"));
-		assertEquals(4, md.readListItemIndet("    - item 2.1").intValue());
-		assertEquals(null, md.readListItemIndet("*Only Bold*"));
+		assertEquals(0, md.readListItemIndet("*", icl).intValue());
+		assertEquals(0, md.readListItemIndet("* ", icl).intValue());
+		assertEquals(0, md.readListItemIndet("* text", icl).intValue());
+		assertEquals(1, md.readListItemIndet(" * text", icl).intValue());
+		assertEquals(1, md.readListItemIndet(" *   text", icl).intValue());
+		assertEquals(2, md.readListItemIndet("  *   text", icl).intValue());
+		assertEquals(1, md.readListItemIndet(" *   ", icl).intValue());
+		assertEquals(null, md.readListItemIndet("**", icl));
+		assertEquals(null, md.readListItemIndet("** text", icl));
+		assertEquals(null, md.readListItemIndet(" ** text", icl));
+		assertEquals(null, md.readListItemIndet("x", icl));
+		assertEquals(null, md.readListItemIndet(" x", icl));
+		assertEquals(4, md.readListItemIndet("    - item 2.1", icl).intValue());
+		assertEquals(null, md.readListItemIndet("*Only Bold*", icl));
 	}
-	
 	
 	@Test
 	public void test_createHTML_listEntryByLevelOnlyLevel1() throws Exception{
@@ -879,7 +878,7 @@ public class TestBrightMarkdown {
 		sb.append(" - item 2\n");
 		sb.append("  - item 3\n");
 		String input = sb.toString();
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><ul><li>item 1</li><li>item 2</li><li>item 3</li></ul></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -895,7 +894,7 @@ public class TestBrightMarkdown {
 		sb.append("    - item 2.1\n");
 		sb.append("    - item 2.2\n");
 		String input = sb.toString();
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><ul><li>item 1</li><li>item 2</li><ul><li>item 2.1</li><li>item 2.2</li></ul></ul></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -918,7 +917,7 @@ public class TestBrightMarkdown {
 		sb.append("  - item 3\n");
 		sb.append("bla3\n");
 		String input = sb.toString();
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><p>bla1</p><ul><li>item 1</li><li>item 2</li><li>item 3</li></ul><p>bla2</p><ul><li>item 1</li><li>item 2</li><li>item 3</li></ul><p>bla3</p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -936,7 +935,7 @@ public class TestBrightMarkdown {
 		sb.append("       - item 2.2.1\n");
 		sb.append("  - item 3\n");
 		String input = sb.toString();
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><ul><li>item 1</li><li>item 2</li><ul><li>item 2.1</li><li>item 2.2</li><ul><li>item 2.2.1</li></ul></ul><li>item 3</li></ul></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -956,7 +955,7 @@ public class TestBrightMarkdown {
 		sb.append("    - item 2.3\n");
 		sb.append(" - item 3\n");
 		String input = sb.toString();
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><ul><li>item 1</li><li>item 2</li><ul><li>item 2.1</li><li>item 2.2</li><ul><li>item 2.2.1</li><ul><li>item 2.2.1.1</li></ul></ul><li>item 2.3</li></ul><li>item 3</li></ul></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -976,7 +975,7 @@ public class TestBrightMarkdown {
 		sb.append("    - item 2.3\n");
 		sb.append("- item 3\n");
 		String input = sb.toString();
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><ul><li>item 1</li><li>item 2</li><ul><li>item 2.1</li><li>item 2.2</li><ul><li>item 2.2.1</li><ul><li>item 2.2.1.1</li></ul></ul><li>item 2.3</li></ul><li>item 3</li></ul></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -994,7 +993,7 @@ public class TestBrightMarkdown {
 		sb.append("       - item 2.2.1\n");
 		sb.append("- item 3\n");
 		String input = sb.toString();
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><ul><li>item 1</li><li>item 2</li><ul><li>item 2.1</li><li>item 2.2</li><ul><li>item 2.2.1</li></ul></ul><li>item 3</li></ul></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -1012,7 +1011,7 @@ public class TestBrightMarkdown {
 		sb.append("          - item 2.2.1\n");
 		sb.append("- item 3\n");
 		String input = sb.toString();
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><ul><li>item 1</li><li>item 2</li><ul><li>item 2.1</li><li>item 2.2</li><ul><li>item 2.2.1</li></ul></ul><li>item 3</li></ul></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -1021,6 +1020,166 @@ public class TestBrightMarkdown {
 	}
 
 	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	@Test
+	public void test_createHTML_numberedListEntryByLevelOnlyLevel1() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append(" . item 1\n");
+		sb.append(" . item 2\n");
+		sb.append("  . item 3\n");
+		String input = sb.toString();
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><ol><li>item 1</li><li>item 2</li><li>item 3</li></ol></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void test_createHTML_numberedListEntryByLevel2Levels() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append(" . item 1\n");
+		sb.append(" . item 2\n");
+		sb.append("    . item 2.1\n");
+		sb.append("    . item 2.2\n");
+		String input = sb.toString();
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><ol><li>item 1</li><li>item 2</li><ol><li>item 2.1</li><li>item 2.2</li></ol></ol></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void test_createHTML_numberedListEntryByLevelTextListTextListText() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("bla1\n");
+		sb.append(" . item 1\n");
+		sb.append(" . item 2\n");
+		sb.append("  . item 3\n");
+		sb.append("bla2\n");
+		sb.append(" . item 1\n");
+		sb.append(" . item 2\n");
+		sb.append("  . item 3\n");
+		sb.append("bla3\n");
+		String input = sb.toString();
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><p>bla1</p><ol><li>item 1</li><li>item 2</li><li>item 3</li></ol><p>bla2</p><ol><li>item 1</li><li>item 2</li><li>item 3</li></ol><p>bla3</p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void test_createHTML_numberedListEntryByLevelUp2Levels() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append(" . item 1\n");
+		sb.append(" . item 2\n");
+		sb.append("    . item 2.1\n");
+		sb.append("    . item 2.2\n");
+		sb.append("       . item 2.2.1\n");
+		sb.append("  . item 3\n");
+		String input = sb.toString();
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><ol><li>item 1</li><li>item 2</li><ol><li>item 2.1</li><li>item 2.2</li><ol><li>item 2.2.1</li></ol></ol><li>item 3</li></ol></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void test_createHTML_numberedListEntryByLevelUp2LevelsButNotToTop() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append(" . item 1\n");
+		sb.append(" . item 2\n");
+		sb.append("    . item 2.1\n");
+		sb.append("    . item 2.2\n");
+		sb.append("       . item 2.2.1\n");
+		sb.append("          . item 2.2.1.1\n");
+		sb.append("    . item 2.3\n");
+		sb.append(" . item 3\n");
+		String input = sb.toString();
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><ol><li>item 1</li><li>item 2</li><ol><li>item 2.1</li><li>item 2.2</li><ol><li>item 2.2.1</li><ol><li>item 2.2.1.1</li></ol></ol><li>item 2.3</li></ol><li>item 3</li></ol></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_createHTML_numberedListEntryByLevelUp2LevelsButNotToTopNoLeadindSpace() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append(" . item 1\n");
+		sb.append(" . item 2\n");
+		sb.append("    . item 2.1\n");
+		sb.append("    . item 2.2\n");
+		sb.append("       . item 2.2.1\n");
+		sb.append("          . item 2.2.1.1\n");
+		sb.append("    . item 2.3\n");
+		sb.append(". item 3\n");
+		String input = sb.toString();
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><ol><li>item 1</li><li>item 2</li><ol><li>item 2.1</li><li>item 2.2</li><ol><li>item 2.2.1</li><ol><li>item 2.2.1.1</li></ol></ol><li>item 2.3</li></ol><li>item 3</li></ol></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_createHTML_numberedListEntryByLevelMultipleLevelsWith1SpaceOff() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append(" . item 1\n");
+		sb.append("  . item 2\n");
+		sb.append("     . item 2.1\n");
+		sb.append("    . item 2.2\n");
+		sb.append("       . item 2.2.1\n");
+		sb.append(". item 3\n");
+		String input = sb.toString();
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><ol><li>item 1</li><li>item 2</li><ol><li>item 2.1</li><li>item 2.2</li><ol><li>item 2.2.1</li></ol></ol><li>item 3</li></ol></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_createHTML_numberedListEntryByLevelMultipleLevelsWith2SpacesOff() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append(" . item 1\n");
+		sb.append("   . item 2\n");
+		sb.append("       . item 2.1\n");
+		sb.append("      . item 2.2\n");
+		sb.append("          . item 2.2.1\n");
+		sb.append(". item 3\n");
+		String input = sb.toString();
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><ol><li>item 1</li><li>item 2</li><ol><li>item 2.1</li><li>item 2.2</li><ol><li>item 2.2.1</li></ol></ol><li>item 3</li></ol></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+
 	@Test
 	public void test_getHeadingItems_normal() throws Exception{
 		StringBuilder sb = new StringBuilder();
@@ -1095,7 +1254,7 @@ public class TestBrightMarkdown {
 		sb.append("# header 3\n");
 		sb.append("bla 7\n");
 		String input = sb.toString();
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expectedTOC = "<span><ul><li>header 1</li><li>header 2</li><ul><li>header 2.1</li><li>header 2.2</li><ul><li>header 2.2.1</li></ul></ul><li>header 3</li></ul></span>";
 		String expectedMainText = "<h1>header 1</h1><p>bla 2</p><h1>header 2</h1><p>bla 3</p><h2>header 2.1</h2><p>bla 4</p><h2>header 2.2</h2><p>bla 5</p><h3>header 2.2.1</h3><p>bla 6</p><h1>header 3</h1><p>bla 7</p>";
 		String expected = "<html><body><p><span>bla 1</span><br><span><b>Content:</b></span></p>" + expectedTOC + expectedMainText + "</body></html>";
@@ -1121,7 +1280,7 @@ public class TestBrightMarkdown {
 		sb.append("# header 3\n");
 		sb.append("bla 7\n");
 		String input = sb.toString();
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expectedTOC = "<span><ul><ul><li>header 2.1</li><li>header 2.2</li><ul><li>header 2.2.1</li></ul></ul><li>header 3</li></ul></span>";
 		String expectedMainText = "<h2>header 2.1</h2><p>bla 4</p><h2>header 2.2</h2><p>bla 5</p><h3>header 2.2.1</h3><p>bla 6</p><h1>header 3</h1><p>bla 7</p>";
 		String expected = "<html><body><p><span>bla 1</span><br><span><b>Content:</b></span></p>" + expectedTOC + expectedMainText + "</body></html>";
@@ -1149,7 +1308,7 @@ public class TestBrightMarkdown {
 //		System.out.println("Parsed:\n" + new BrightMarkdown().toString(new BrightMarkdown().parseAll(input)));
 		
 		
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
 		expected += "<body><p>My Table:</p><table>";
@@ -1176,7 +1335,7 @@ public class TestBrightMarkdown {
 		System.out.println("input:\n" + input);
 		
 		
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
 		expected += "<body><p>My Table:</p><table>";
@@ -1204,7 +1363,7 @@ public class TestBrightMarkdown {
 //		System.out.println("Parsed:\n" + new BrightMarkdown().toString(new BrightMarkdown().parseAll(input)));
 		
 		
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
 		expected += "<body><p>My Table:</p><table>";
@@ -1226,7 +1385,7 @@ public class TestBrightMarkdown {
 		System.out.println("input:\n" + input);
 		
 		
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
 		expected += "<body><p>My Table:</p><table>";
@@ -1253,7 +1412,7 @@ public class TestBrightMarkdown {
 		System.out.println("Parsed:\n" + new BrightMarkdown().toString(new BrightMarkdown().parseAll(input)));
 
 		
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
 		expected += "<body><p>My Table:</p><table>";
@@ -1279,7 +1438,7 @@ public class TestBrightMarkdown {
 
 		System.out.println("input:\n" + input);
 		
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
 		expected += "<body><p>My Table:</p><table>";
@@ -1306,7 +1465,7 @@ public class TestBrightMarkdown {
 
 		System.out.println("input:\n" + input);
 		
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
 		expected += "<body><p>My Table:</p><table>";
@@ -1332,7 +1491,7 @@ public class TestBrightMarkdown {
 
 		System.out.println("input:\n" + input);
 		
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
 		expected += "<body><p>My Table:</p><table>";
@@ -1359,7 +1518,7 @@ public class TestBrightMarkdown {
 
 		System.out.println("input:\n" + input);
 		
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
 		expected += "<body><p>My Table:</p><table>";
@@ -1384,7 +1543,7 @@ public class TestBrightMarkdown {
 
 		System.out.println("input:\n" + input);
 		
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
 		expected += "<body><p>My Table:</p><table>";
@@ -1399,7 +1558,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_normal_escapeCellSeparator() throws Exception{
 		String input = "# Title\nThis text is _italic_ and the \\| is kept. Nice?";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><h1>Title</h1><p><span>This text is </span><i>italic</i><span> and the | is kept. Nice?</span></p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -1418,7 +1577,7 @@ public class TestBrightMarkdown {
 
 		System.out.println("input:\n" + input);
 		
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
 		expected += "<body><p>My Table:</p><table>";
@@ -1442,7 +1601,7 @@ public class TestBrightMarkdown {
 
 		System.out.println("input:\n" + input);
 		
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
 		expected += "<body><p>My Table:</p><table>";
@@ -1457,19 +1616,31 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_normal_underline() throws Exception{
 		String input = "# Title\n* item 1\n* item 2\n* item 3\n\nThis text is +underlined+. Nice?";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><h1>Title</h1><ul><li>item 1</li><li>item 2</li><li>item 3</li></ul><p><br><span><span>This text is </span><u>underlined</u><span>. Nice?</span></span></p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
 		System.out.println("Result:\n" + result);
 		assertEquals(expected, result);
 	}
-	
+
+	@Test
+	public void test_createHTML_normal_shortTextUnderline() throws Exception{
+		String input = "This text is +underlined+. Nice?";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><p><span>This text is </span><u>underlined</u><span>. Nice?</span></p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Parsed:\n" + new BrightMarkdown().toString(new BrightMarkdown().parseAll(input)));
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
 
 	@Test
 	public void test_createHTML_normal_BoldAndUnderline() throws Exception{
 		String input = "# Title\n* item 1\n* item 2\n* item 3\n\nThis text is *+underlined & bold+*. Nice?";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><h1>Title</h1><ul><li>item 1</li><li>item 2</li><li>item 3</li></ul><p><br><span><span>This text is </span><b><u>underlined &amp; bold</u></b><span>. Nice?</span></span></p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -1495,7 +1666,7 @@ public class TestBrightMarkdown {
 	@Test
 	public void test_createHTML_noMarkdownTag() throws Exception{
 		String input = "{NOMARKDOWN}# Title\n* item 1\n* item 2\n* item 3\n\nThis text is _italic_.\n---\nNice?";
-		String result = new BrightMarkdown().createHTML(input).replace("\r", "").replace("\n", "");
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><body><p><span># Title</span><br><span>* item 1</span><br><span>* item 2</span><br><span>* item 3</span><br><br><span>This text is _italic_.</span><br><span>---</span><br><span>Nice?</span></p></body></html>";
 		System.out.println("input:\n" + input);
 		System.out.println("==========================");
@@ -1503,6 +1674,277 @@ public class TestBrightMarkdown {
 		System.out.println("==========================");
 		System.out.println("Result:\n" + result);
 		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_createHTML_numberedListFormatNumberAndPeriod() throws Exception{
+		String input = "# My List\n1. item 1\n2. item 2\n2. item 3";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><h1>My List</h1><ol><li>item 1</li><li>item 2</li><li>item 3</li></ol></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_createHTML_numberedListFormatDot() throws Exception{
+		String input = "# My List\n. item 1\n. item 2\n. item 3";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><h1>My List</h1><ol><li>item 1</li><li>item 2</li><li>item 3</li></ol></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void test_createHTML_bulletPointsLevel3Complex() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append(" - i1\n");
+		sb.append(" -- i11\n");
+		sb.append(" *** i111\n");
+		sb.append(" -- i12\n");
+		sb.append(" - i2\n");
+		String input = sb.toString();
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><ul><li>i1</li><ul><li>i11</li><ul><li>i111</li></ul><li>i12</li></ul><li>i2</li></ul></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_createHTML_numberedListSubBulletPointSubNumber() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append(" . item 1\n");
+		sb.append(" . item 2\n");
+		sb.append("    - item 2.1\n");
+		sb.append("    - item 2.2\n");
+		sb.append("       . item 2.2.1\n");
+		sb.append("  . item 3\n");
+		String input = sb.toString();
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><ol><li>item 1</li><li>item 2</li><ul><li>item 2.1</li><li>item 2.2</li><ol><li>item 2.2.1</li></ol></ul><li>item 3</li></ol></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_createHTML_bulletListSubNumberSubBulletPoint() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append(" - item 1\n");
+		sb.append(" - item 2\n");
+		sb.append("    . item 2.1\n");
+		sb.append("    . item 2.2\n");
+		sb.append("       - item 2.2.1\n");
+		sb.append("  - item 3\n");
+		String input = sb.toString();
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><ul><li>item 1</li><li>item 2</li><ol><li>item 2.1</li><li>item 2.2</li><ul><li>item 2.2.1</li></ul></ol><li>item 3</li></ul></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void test_createHTML_mixedBulletPointAndNumberedList() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append(" - item 1\n");
+		sb.append(" . item 2\n");
+		sb.append("    . item 2.1\n");
+		sb.append("    - item 2.2\n");
+		sb.append("    . item 2.3\n");
+		sb.append("       - item 2.2.1\n");
+		sb.append("  - item 3\n");
+		String input = sb.toString();
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><ul><li>item 1</li><li>item 2</li><ol><li>item 2.1</li><li>item 2.2</li><li>item 2.3</li><ul><li>item 2.2.1</li></ul></ol><li>item 3</li></ul></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void test_createHTML_codeBlock() throws Exception{
+		String input = "Title\n - bullet 1\n - bullet two\nmore text\n```\nsome source code\nnext line\nint a = 7;\nint b = 5;\n```\nrest of the text";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><p>Title</p><ul><li>bullet 1</li><li>bullet two</li></ul><p>more text</p><pre style=\"" + BrightMarkdownHTMLCreator.CODE_BOX_STYLE + "\"><code><span><br/></span><span>some source code<br/>next line<br/>int a = 7;<br/>int b = 5;</span></code></pre><p>rest of the text</p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_createHTML_codeBlockWithIndentedText() throws Exception{
+		String input = "Title\n - bullet 1\n - bullet two\nmore text\n```\nsome source code\nnext line\n  int a = 7;\n  int b = 5;\n```\nrest of the text";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><p>Title</p><ul><li>bullet 1</li><li>bullet two</li></ul><p>more text</p><pre style=\"" + BrightMarkdownHTMLCreator.CODE_BOX_STYLE + "\"><code><span><br/></span><span>some source code<br/>next line<br/>  int a = 7;<br/>  int b = 5;</span></code></pre><p>rest of the text</p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		System.out.println("Result (incl. new lines):\n" + new BrightMarkdown().createHTML(input));
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_createHTML_codeBlockUnclosed() throws Exception{
+		String input = "Title\n - bullet 1\n - bullet two\nmore text\n```\nsome source code\nnext line\nint a = 7;\nint b = 5;";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><p>Title</p><ul><li>bullet 1</li><li>bullet two</li></ul><p>more text</p><pre style=\"" + BrightMarkdownHTMLCreator.CODE_BOX_STYLE + "\"><code><span><br/></span><span>some source code<br/>next line<br/>int a = 7;<br/>int b = 5;</span></code></pre></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_createHTML_codeBlockOnly() throws Exception{
+		String input = "```\nsome source code\nnext line\nint a = 7;\nint b = 5;\n```";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><pre style=\"" + BrightMarkdownHTMLCreator.CODE_BOX_STYLE + "\"><code><span><br/></span><span>some source code<br/>next line<br/>int a = 7;<br/>int b = 5;</span></code></pre></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_createHTML_codeWithUnknownLanguage() throws Exception{
+		String input = "```xyz\nsome source code\nnext line\nint a = 7;\nint b = 5;\n```";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><pre style=\"" + BrightMarkdownHTMLCreator.CODE_BOX_STYLE + "\"><code><span><br/></span><span>some source code<br/>next line<br/>int a = 7;<br/>int b = 5;</span></code></pre></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_createHTML_codeBlockWithBracketsLikeALink() throws Exception{
+		String input = "Title\n - bullet 1\n - bullet two\nmore text\n```\nsome source code\nnext line\nThis is text with [brackets][like a link]\n```\nrest of the text";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><p>Title</p><ul><li>bullet 1</li><li>bullet two</li></ul><p>more text</p><pre style=\"" + BrightMarkdownHTMLCreator.CODE_BOX_STYLE + "\"><code><span><br/></span><span>some source code<br/>next line<br/>This is text with [brackets][like a link]</span></code></pre><p>rest of the text</p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		System.out.println("Result (incl. new lines):\n" + new BrightMarkdown().createHTML(input));
+		assertEquals(expected, result);
+	}
+
+	
+	@Test
+	public void test_createHTML_codeBlockJava() throws Exception{
+		String input = "Title\n - bullet 1\n - bullet two\nmore text\n```java\nif (x == 4) {\n    //commented out\n    int y = \"hi!\";\n    /*block\n    comment*/\n}\n\na = b;\n```\nrest of the text";
+		String resultWithFormatting = new BrightMarkdown().createHTML(input);
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><p>Title</p><ul><li>bullet 1</li><li>bullet two</li></ul><p>more text</p><pre style=\"" + BrightMarkdownHTMLCreator.CODE_BOX_STYLE + "\"><code><span><br/></span><span style=\"color:purple;font-weight:bold\">if</span><span> (x == 4) {<br/></span><span style=\"color:darkgreen\">//commented out</span><span><br/></span><span style=\"color:purple;font-weight:bold\">int</span><span> y = </span><span style=\"color:blue\">\"hi!\"</span><span>;<br/></span><span style=\"color:darkgreen\">/*block<br/>comment*/</span><span><br/>}<br/><br/>a = b;</span></code></pre><p>rest of the text</p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		System.out.println("==========================");
+		System.out.println("Result with formatting:\n>>\n" + resultWithFormatting + "\n<<");
+		assertEquals(expected, result);
+	}
+
+
+	@Test
+	public void test_createHTML_codeBlockXML() throws Exception{
+		String input = "Title\n - bullet 1\n - bullet two\nmore text\n```xml\n<tag1 x=\"1\">nice</tag1>\n```\nrest of the text";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String resultWithFormatting = new BrightMarkdown().createHTML(input);
+		String expected = "<html><body><p>Title</p><ul><li>bullet 1</li><li>bullet two</li></ul><p>more text</p><pre style=\"background:lightgrey\"><code><span><br/></span><span style=\"color:purple;font-weight:bold\">&lt;tag1</span><span> x=</span><span style=\"color:blue\">\"1\"</span><span style=\"color:purple;font-weight:bold\">&gt;</span><span>nice</span><span style=\"color:purple;font-weight:bold\">&lt;/tag1&gt;</span></code></pre><p>rest of the text</p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		System.out.println("==========================");
+		System.out.println("==========================");
+		System.out.println("Result with formatting:\n>>\n" + resultWithFormatting + "\n<<");
+		assertEquals(expected, result);
+	}
+
+	
+	@Test
+	public void test_isValidSize_multiple() throws Exception{
+		assertEquals(true, new BrightMarkdown().isValidSize("10"));
+		assertEquals(true, new BrightMarkdown().isValidSize("10px"));
+		assertEquals(true, new BrightMarkdown().isValidSize("10in"));
+		assertEquals(true, new BrightMarkdown().isValidSize("10mm"));
+		assertEquals(true, new BrightMarkdown().isValidSize("10.3mm"));
+		assertEquals(true, new BrightMarkdown().isValidSize("1mm"));
+		assertEquals(false, new BrightMarkdown().isValidSize("1mx"));
+		assertEquals(false, new BrightMarkdown().isValidSize("mm"));
+		assertEquals(false, new BrightMarkdown().isValidSize("mmx"));
+	}
+
+	@Test
+	public void test_readImageLocationAndSize_widthAndHeight() throws Exception{
+		String input = "myimg.png width=10mm height=7mm";
+		BrightMarkdownSection section = new BrightMarkdownSection();
+		new BrightMarkdown().readImageLocationAndSize(section, input);
+		
+		assertEquals("myimg.png", section.getLocation());
+		assertEquals("10mm", section.getImageWidth());
+		assertEquals("7mm", section.getImageHeight());
+	}
+
+	@Test
+	public void test_readImageLocationAndSize_widthAndHeightMultipleSpace() throws Exception{
+		String input = "myimg.png   width=10mm   height=7mm";
+		BrightMarkdownSection section = new BrightMarkdownSection();
+		new BrightMarkdown().readImageLocationAndSize(section, input);
+		
+		assertEquals("myimg.png", section.getLocation());
+		assertEquals("10mm", section.getImageWidth());
+		assertEquals("7mm", section.getImageHeight());
+	}
+	
+	@Test
+	public void test_readImageLocationAndSize_width() throws Exception{
+		String input = "myimg.png width=10mm ";
+		BrightMarkdownSection section = new BrightMarkdownSection();
+		new BrightMarkdown().readImageLocationAndSize(section, input);
+		
+		assertEquals("myimg.png", section.getLocation());
+		assertEquals("10mm", section.getImageWidth());
+		assertEquals(null, section.getImageHeight());
+	}
+	
+	
+	@Test
+	public void test_createHTML_imageNormal() throws Exception{
+		String input = "Title\n![my img](image.png)\nmore text";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body><p><span>Title</span><br><span><img alt=\"my img\" src=\"image.png\"></span><br><span>more text</span></p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Parsed:\n" + new BrightMarkdown().toString(new BrightMarkdown().parseAll(input)));
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void test_createHTML_imageNormalRisized() throws Exception{
+		String input = "Title\n![my img](image.png width=10mm)\nmore text";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String resultWithFormatting = new BrightMarkdown().createHTML(input);
+		String expected = "<html><body><p><span>Title</span><br><span><img alt=\"my img\" src=\"image.png\" width=\"10mm\"></span><br><span>more text</span></p></body></html>";
+		System.out.println("input:\n" + input);
+		System.out.println("==========================");
+		System.out.println("Parsed:\n" + new BrightMarkdown().toString(new BrightMarkdown().parseAll(input)));
+		System.out.println("==========================");
+		System.out.println("Result:\n" + result);
+		System.out.println("==========================");
+		System.out.println("Result with formatting:\n>>\n" + resultWithFormatting + "\n<<");
+		assertEquals(expected, result);
+		assertEquals(true, false);
 	}
 	
 }
