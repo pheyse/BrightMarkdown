@@ -27,6 +27,7 @@ public class BrightMarkdownSection {
 	private String imageWidth;
 	private String imageHeight;
 	private String imageAltText;
+	private boolean backgroundColorEndTag = false;
 
 	public MDType getType() {
 		return type;
@@ -128,6 +129,11 @@ public class BrightMarkdownSection {
 	public void setImageAltText(String imageAltText) {
 		this.imageAltText = imageAltText;
 	}
-	
-	
+	public boolean isBackgroundColorEndTag() {
+		return backgroundColorEndTag;
+	}
+	public void setBackgroundColorEndTag(boolean backgroundColorEndTag) {
+		this.backgroundColorEndTag = backgroundColorEndTag;
+	}
+
 }

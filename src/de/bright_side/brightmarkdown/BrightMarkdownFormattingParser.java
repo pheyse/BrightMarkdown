@@ -39,13 +39,28 @@ public class BrightMarkdownFormattingParser {
 	
 
 	private static final Pattern HEX_COLOR_CODE_PATTERN = Pattern.compile("^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$");
+	private boolean logginActive;
 	
-	protected List<BrightMarkdownSection> createFormattedSections(String text){
-		Map<Integer, String> tags = parseFormattingTags(text);
-		return createSections(text, tags);
+	public BrightMarkdownFormattingParser() {
+		this(false);
 	}
 	
-	
+	public BrightMarkdownFormattingParser(boolean logginActive) {
+		this.logginActive = logginActive;
+	}
+
+	protected List<BrightMarkdownSection> createFormattedSections(String text){
+		Map<Integer, String> tags = parseFormattingTags(text);
+		log("createFormattedSections: tags = " + tags);
+		return createSections(text, tags);
+	}
+
+	private void log(String message) {
+		if (logginActive) {
+			System.out.println("BrightMarkdownFormattingParser> " + message);
+		}
+	}
+
 	protected Map<Integer, String> parseFormattingTags(String text){
 		Map<Integer, String> result = new TreeMap<Integer, String>();
 		if (text == null) {
@@ -86,6 +101,10 @@ public class BrightMarkdownFormattingParser {
 	
 	protected List<BrightMarkdownSection> createSections(String text, Map<Integer, String> tags){
 		List<BrightMarkdownSection> result = new ArrayList<BrightMarkdownSection>();
+		if (tags.containsValue("{bc}")) {
+			log("found bc tag!");
+		}
+		
 		if (text == null) {
 			return result;
 		}
@@ -96,12 +115,14 @@ public class BrightMarkdownFormattingParser {
 		boolean strikeThrough = false;
 		String color = null;
 		String backgroundColor = null;
+		boolean backgroundColorEndTag = false;
 		
 		int lastPos = 0;
 		for (Map.Entry<Integer, String> i: tags.entrySet()) {
 			String sectionText = text.substring(lastPos, i.getKey());
-			if (!sectionText.isEmpty()) {
-				result.add(createSection(sectionText, bold, italic, underline, strikeThrough, color, backgroundColor));
+			if (isRelevantSection(sectionText, backgroundColorEndTag)){
+//			if (!sectionText.isEmpty()) {
+				result.add(createSection(sectionText, bold, italic, underline, strikeThrough, color, backgroundColor, backgroundColorEndTag));
 			}
 			
 			if (i.getValue().equals(INDICATOR_BOLD)) {
@@ -112,32 +133,41 @@ public class BrightMarkdownFormattingParser {
 				underline = !underline;
 			} else if (i.getValue().equals(INDICATOR_STRIKETHROUGH)) {
 				strikeThrough = !strikeThrough;
-			} else if (i.getValue().equals(COLOR_END_TAG)) {
+			} else if ((i.getValue().equals(COLOR_END_TAG)) || (i.getValue().equals(COLOR_SHORT_END_TAG))) {
 				color = null;
-			} else if (i.getValue().equals(BACKGROUND_COLOR_END_TAG)) {
+			} else if ((i.getValue().equals(BACKGROUND_COLOR_END_TAG)) || (i.getValue().equals(BACKGROUND_COLOR_SHORT_END_TAG))) {
 				backgroundColor = null;
+				backgroundColorEndTag = true;
 			} else if (i.getValue().startsWith(COLOR_TAG_START)) {
 				color = parseColor(i.getValue().substring(COLOR_TAG_START.length()));
 			} else if (i.getValue().startsWith(COLOR_SHORT_TAG_START)) {
 				color = parseColor(i.getValue().substring(COLOR_SHORT_TAG_START.length()));
 			} else if (i.getValue().startsWith(BACKGROUND_COLOR_TAG_START)) {
 				backgroundColor = parseColor(i.getValue().substring(BACKGROUND_COLOR_TAG_START.length()));
+				backgroundColorEndTag = false;
 			} else if (i.getValue().startsWith(BACKGROUND_COLOR_SHORT_TAG_START)) {
 				backgroundColor = parseColor(i.getValue().substring(BACKGROUND_COLOR_SHORT_TAG_START.length()));
+				backgroundColorEndTag = false;
 			}
 			
 			lastPos = i.getKey() + i.getValue().length();
 			
 		}
 		String restText = text.substring(lastPos);
-		if (!restText.isEmpty()){
-			result.add(createSection(restText, bold, italic, underline, strikeThrough, color, backgroundColor));
+//		if (!restText.isEmpty()){
+		if (isRelevantSection(restText, backgroundColorEndTag)){
+			result.add(createSection(restText, bold, italic, underline, strikeThrough, color, backgroundColor, backgroundColorEndTag));
 		}
 		
 		return result;
 	}
 	
-	private BrightMarkdownSection createSection(String text, boolean bold, boolean italic, boolean underline, boolean strikeThrough, String color, String backgroundColor) {
+	private boolean isRelevantSection(String text, boolean backgroundColorEndTag) {
+		return (!text.isEmpty()) || (backgroundColorEndTag);
+	}
+	
+	private BrightMarkdownSection createSection(String text, boolean bold, boolean italic, boolean underline, boolean strikeThrough, String color, String backgroundColor
+			, boolean backgroundColorEndTag) {
 		BrightMarkdownSection result = new BrightMarkdownSection();
 		result.setType(MDType.FORMATTED_TEXT);
 		result.setRawText(text);
@@ -147,6 +177,7 @@ public class BrightMarkdownFormattingParser {
 		result.setStrikeThrough(strikeThrough);
 		result.setColor(color);
 		result.setBackgroundColor(backgroundColor);
+		result.setBackgroundColorEndTag(backgroundColorEndTag);
 		return result;
 	}
 
@@ -235,6 +266,5 @@ public class BrightMarkdownFormattingParser {
 		
 		return false;
 	}
-
 
 }

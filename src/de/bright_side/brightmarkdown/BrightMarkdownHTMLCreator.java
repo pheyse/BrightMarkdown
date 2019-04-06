@@ -2,9 +2,12 @@ package de.bright_side.brightmarkdown;
 
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TreeMap;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -16,15 +19,23 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import de.bright_side.brightmarkdown.BrightMarkdown.FormattingItem;
 import de.bright_side.brightmarkdown.BrightMarkdownSection.MDType;
 
 public class BrightMarkdownHTMLCreator {
 	public static final String CODE_BOX_STYLE = "background:lightgrey";
+	public static final Set<String> PARENT_NODES_THAT_DONT_NEED_SPAN = new HashSet<String>(Arrays.asList("span", "p", "td", "th", "div", "b", "i", "u", "h1", "h2", "h3", "h4", "h5"));
+	private static final String SPAN_TAG = "span";
+	private static final String INTERNAL_TEXT_NODE_NAME = "#text";
+	private static final String INTERNAL_NODE_NAME_PREFIX = "#";
 	private Map<FormattingItem, Integer> fontSizesInMM;
+	private boolean loggingActive;
 
-	public BrightMarkdownHTMLCreator(Map<FormattingItem, Integer> fontSizesInMM) {
+	public BrightMarkdownHTMLCreator(boolean loggingActive, Map<FormattingItem, Integer> fontSizesInMM) {
+		this.loggingActive = loggingActive;
 		this.fontSizesInMM = fontSizesInMM;
 	}
 
@@ -54,19 +65,106 @@ public class BrightMarkdownHTMLCreator {
 		
 		Element bodyElement = appendNode(rootElement, "body", null);
 		createHTMLNodes(bodyElement, section);
+		logHTMLString("after HTML nodes creation", document);
+		
+		removeUnneededNodes(bodyElement);
+		logHTMLString("after removing unneded nodes", document);
+		return createHTMLString(document, true);
+	}
+
+	private void logHTMLString(String message, Document document) throws Exception {
+		if (!loggingActive) {
+			return;
+		}
+		log("===================================\n" + message + ":\n" + createHTMLString(document, false) + "===================================");
+	}
+
+	private String createHTMLString(Document document, boolean replaceEmptySpanAndParagraphNodes) throws Exception {
 		TransformerFactory transformerFactory = TransformerFactory.newInstance();
 		Transformer transformer = transformerFactory.newTransformer();
 		StringWriter writer = new StringWriter();
 		transformer.transform(new DOMSource(document), new StreamResult(writer));
 		String result = writer.getBuffer().toString();
-		log("result before replacing empty p-tag: >>\n" + result + "\n<<");
-		result = result.replace("<p></p>", "");
-		result = result.replace("<span></span>", "");
+		if (replaceEmptySpanAndParagraphNodes) {
+			result = result.replace("<p></p>", "");
+			result = result.replace("<span></span>", "");
+		}
 		result = BrightMarkdown.unescape(result);
         result = result.replace(BrightMarkdown.ESCAPE_NEW_LINE_IN_CODE_BLOCK, "<br/>");
 		return result;
 	}
 	
+	private void removeUnneededNodes(Node node) {
+		NodeList childNodes = node.getChildNodes();
+		for (int i = 0; i < childNodes.getLength(); i++) {
+			removeUnneededNodes(childNodes.item(i));
+		}
+		if (!node.getNodeName().equals(SPAN_TAG)) {
+			return;
+		}
+		
+		if (hasNonInternalChildNodes(node)) {
+			return;
+		}
+		
+		Node parent = node.getParentNode();
+		String parentName = parent.getNodeName();
+		if (!PARENT_NODES_THAT_DONT_NEED_SPAN.contains(parentName)) {
+			return;
+		}
+
+		boolean removed = false;
+		if ((BrightMarkdownUtil.isEmptyOrNull(getInternalText(node)) && (!hasNonInternalChildNodes(node)))){
+			log("removing node because it has no text content and no children");
+			parent.removeChild(node);
+			removed = true;
+		} else if ((!node.hasAttributes()) && (parent.getChildNodes().getLength() == 1)){
+			log("removing node because it has no attributes and parent only has this child");
+			String nodeText = getInternalText(node);
+			parent.removeChild(node);
+			if (!BrightMarkdownUtil.isEmptyOrNull(nodeText)) {
+				parent.setTextContent(parent.getTextContent() + nodeText);
+			}
+			removed = true;
+		}
+		
+		if (removed) {
+			//: process parent node again:
+			removeUnneededNodes(parent);
+		}
+		
+	}
+	
+	private boolean hasNonInternalChildNodes(Node node) {
+		if (!node.hasChildNodes()) {
+			return false;
+		}
+		NodeList childNodes = node.getChildNodes();
+		int size = childNodes.getLength();
+		for (int i = 0; i < size; i++) {
+			Node childNode = childNodes.item(i);
+			if (!childNode.getNodeName().startsWith(INTERNAL_NODE_NAME_PREFIX)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	private String getInternalText(Node node) {
+		if (!node.hasChildNodes()) {
+			return null;
+		}
+		NodeList childNodes = node.getChildNodes();
+		int size = childNodes.getLength();
+		for (int i = 0; i < size; i++) {
+			Node childNode = childNodes.item(i);
+			if (childNode.getNodeName().equals(INTERNAL_TEXT_NODE_NAME)) {
+				return childNode.getTextContent();
+			}
+		}
+		return null;
+	}
+
 	private boolean checkContainsTables(BrightMarkdownSection section) {
 		if (section.getChildren() == null) {
 			return false;
@@ -315,6 +413,11 @@ public class BrightMarkdownHTMLCreator {
 		boolean firstRow = true;
 		for (BrightMarkdownSection rowSecion: tableItems) {
 			Element rowNode = appendNode(tableNode, "tr", null);
+			
+			if (rowSecion.getBackgroundColor() != null) {
+				setBackgroundColorStyle(rowNode, rowSecion.getBackgroundColor());
+			}
+			
 			String cellTagName = "td";
 			if (firstRow && firstRowIsHeader) {
 				cellTagName = "th";
@@ -324,6 +427,10 @@ public class BrightMarkdownHTMLCreator {
 					throw new RuntimeException("Expected type table cell, but found: " + cellSection.getType());
 				}
 				Element cellNode = appendNode(rowNode, cellTagName, null);
+				if (cellSection.getBackgroundColor() != null) {
+					setBackgroundColorStyle(cellNode, cellSection.getBackgroundColor());
+				}
+				
 				addFormattedText(cellNode, cellSection);
 			}
 			int missingCells = numberOfColumns - rowSecion.getChildren().size();
@@ -439,7 +546,7 @@ public class BrightMarkdownHTMLCreator {
 					}
 					if (child.getBackgroundColor() != null) {
 						currentNode = appendNode(currentNode, "span");
-						setAttrib(currentNode, "style", "background-color:" + child.getBackgroundColor());
+						setBackgroundColorStyle(currentNode, child.getBackgroundColor());
 					}
 					if (currentNode == node) { //: there is no formatting and no sub-node has been created, then create a sub node for the text
 						currentNode = appendNode(currentNode, "span");
@@ -450,6 +557,12 @@ public class BrightMarkdownHTMLCreator {
 			}
 		}		
 	}
+
+	private void setBackgroundColorStyle(Element currentNode, String backgroundColor) {
+		setAttrib(currentNode, "style", "background-color:" + backgroundColor);
+	}
+	
+	
 	
 //	private void addFormattedText(Element node, BrightMarkdownSection item) throws Exception {
 //		if (item.getRawText() != null){
@@ -528,7 +641,9 @@ public class BrightMarkdownHTMLCreator {
 	}
 	
 	private void log(String message) {
-		System.out.println("BrightMarkdownHTMLCreator> " + message);
+		if (loggingActive) {
+			System.out.println("BrightMarkdownHTMLCreator> " + message);
+		}
 	}
 
 

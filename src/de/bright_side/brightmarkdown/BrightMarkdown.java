@@ -16,14 +16,15 @@ import de.bright_side.brightmarkdown.BrightMarkdownUtil.PosAndTag;
 /**
  * 
  * @author Philip Heyse
- * @version 1.3.0
+ * @version 1.5.0
  * 
  * version 1.1.2 (2017-12-08): empty lines, nested text format fix
  * version 1.1.3 (2018-01-05): Bug fix for bullet point level up
  * version 1.2.0 (2018-01-20): Simplified formatting, list levels by indent, TOC
  * version 1.3.0 (2018-03-03): Added table feature, underline formatting and tag to disable parsing
  * version 1.4.0 (2018-06-21): Images, combined numbered and bullet point lists with indents, text foreground and background color, source code formatting, nested formatting of bold, italic, underline and strikethrough in any order
-
+ * version 1.5.0 (2019-04-02): Background color for table rows and table cells
+ *
  */
 public class BrightMarkdown {
 	private static final String[] HEADINGS_INDICATOR = {"#", "##", "###", "####", "#####", "######"};
@@ -74,14 +75,16 @@ public class BrightMarkdown {
 	
 	public static enum FormattingItem {H1, H2, H3, H4, H5, H6}
 	private Map<FormattingItem, Integer> fontSizesInMM = new EnumMap<>(FormattingItem.class);
+	private boolean logginActive = false;
 
 	private static final Map<String, BrightMarkdownCodeFormat> CODE_FORMATS = new BrightMarkdownCodeFormatDefinition().createCodeFormats();
 	private static final String IMAGE_WIDTH_LABEL = "width=";
 	private static final String IMAGE_HEIGHT_LABEL = "height=";
 	
+	
 	public String createHTML(String markdownText) throws Exception{
 		BrightMarkdownSection section = parseAll(getUseMarkdownText(markdownText));
-		return new BrightMarkdownHTMLCreator(fontSizesInMM).toHTML(section);
+		return new BrightMarkdownHTMLCreator(logginActive, fontSizesInMM).toHTML(section);
 	}
 	
 	private String getUseMarkdownText(String markdownText) {
@@ -169,6 +172,7 @@ public class BrightMarkdown {
 		add(sb, "## Tables:");
 		add(sb, "* use the \\| character to separate cells");
 		add(sb, "* place a few \\- chars underneath the first row to make it a header row");
+		add(sb, "* place \\{bg-color:_*value*_\\} or \\{bc:_*value*_\\} at the beginning of a row to set the row background or at the beginning of a cell to set the cell background");
 		add(sb, "");
 		add(sb, "## Escaping special characters");
 		add(sb, "* Place a \\\\ before a special character like \\* to escape it (ignore for processing)");
@@ -219,8 +223,6 @@ public class BrightMarkdown {
 		parseHorizontalRuleEntries(section);
 		parseTableOfContentEntries(section);
 
-		
-
 		parseRawLineEntries(section, MDType.HEADING, HEADINGS_INDICATOR, true);
 		parseRawLineEntries(section, MDType.UNCHECKED_ITEM, UNCHECKED_ITEM_INDICATORS, false);
 		parseRawLineEntries(section, MDType.CHECKED_ITEM, CHECKED_ITEM_INDICATORS, false);
@@ -230,25 +232,18 @@ public class BrightMarkdown {
 		parseRawLineEntries(section, MDType.BULLET_POINT, BULLET_POINT_INDICATORS_C, true);
 		parseRawLineEntries(section, MDType.BULLET_POINT, BULLET_POINT_INDICATORS_D, true);
 		parseRawLineEntries(section, MDType.NUMBERED_ITEM, NUMBERED_ITEM_INDICATORS, false);
+		logSection("before parseTableRows", section);
 		parseTableRows(section);
-
-		
-		
-		log("before parseTextParagraphs: " + toString(section));
+		logSection("after parseTableRows", section);
+		logSection("before parseTextParagraphs", section);
 		parseTextParagraphs(section);
-		log("after parseTextParagraphs: " + toString(section));
-		
+		logSection("after parseTextParagraphs", section);
 		parseLinks(section);
 
+		logSection("before formatting", section);
 		parseFormatting(section);
-//		parseFormatting(section, MDType.BOLD, "*");
-//		parseFormatting(section, MDType.UNDERLINE, "+");
-//		parseFormatting(section, MDType.ITALIC, "_");
-//		parseFormatting(section, MDType.STRIKETHROUGH, "~");
-		
-		
-		log("parseAll result:\n" + toString(section) + "\n --------");
-		
+		logSection("after formatting", section);
+		logSection("parseAll result", section);
 		return section;
 	}
 	
@@ -352,7 +347,7 @@ public class BrightMarkdown {
 	private void parseHorizontalRuleEntries(BrightMarkdownSection topSection) {
 		for (String indicator: HORIZONTAL_RULE_INDICATORS){
 			String indicatorWithLength3 = indicator + indicator + indicator;
-			for (BrightMarkdownSection section: getAllSectionsAndSubSections(topSection)){
+			for (BrightMarkdownSection section: BrightMarkdownUtil.getAllSectionsAndSubSections(topSection)){
 				if ((section.getType() == MDType.RAW_LINE) && (section.getRawText() != null)){
 					String rawText = section.getRawText().trim();
 					if ((rawText.startsWith(indicatorWithLength3)) && (rawText.replace(indicator, "").isEmpty())){
@@ -366,7 +361,7 @@ public class BrightMarkdown {
 	}
 	
 	private void parseTableOfContentEntries(BrightMarkdownSection topSection) {
-		for (BrightMarkdownSection section: getAllSectionsAndSubSections(topSection)){
+		for (BrightMarkdownSection section: BrightMarkdownUtil.getAllSectionsAndSubSections(topSection)){
 			if ((section.getType() == MDType.RAW_LINE) && (section.getRawText() != null)){
 				String rawText = section.getRawText().trim();
 				if ((rawText.equals(TABLE_OF_CONTENT_MARKER))){
@@ -377,29 +372,11 @@ public class BrightMarkdown {
 		}
 	}
 	
-	private List<BrightMarkdownSection> getAllSectionsAndSubSections(BrightMarkdownSection section){
-		return getAllSectionsAndSubSections(section, false);
-	}
-
-	private List<BrightMarkdownSection> getAllSectionsAndSubSections(BrightMarkdownSection section, boolean excludeCodeBlocks){
-		List<BrightMarkdownSection> result = new ArrayList<>();
-		if ((excludeCodeBlocks) && (section.getType() == MDType.CODE_BLOCK)){
-			return result;
-		}
-		result.add(section);
-		if (section.getChildren() != null){
-			for (BrightMarkdownSection i: section.getChildren()){
-				result.addAll(getAllSectionsAndSubSections(i, excludeCodeBlocks));
-			}
-		}
-		return result;
-	}
-	
 	protected void parseListEntriesByLevel(BrightMarkdownSection topSection) {
 		Integer previousListItemIndent = null;
 		Integer previousListItemLevel = null;
 		Map<Integer, Integer> levelToIndentMap = new TreeMap<Integer, Integer>();
-		for (BrightMarkdownSection section: getAllSectionsAndSubSections(topSection)){
+		for (BrightMarkdownSection section: BrightMarkdownUtil.getAllSectionsAndSubSections(topSection)){
 			String rawText = section.getRawText();
 			if ((section.getType() == MDType.RAW_LINE) && (rawText != null)){
 				MDType type = MDType.BULLET_POINT;
@@ -536,7 +513,7 @@ public class BrightMarkdown {
 	private void parseRawLineEntries(BrightMarkdownSection topSection, MDType type, String[] indicators, boolean setLevelDepth) {
 		for (int level = 1; level <= indicators.length; level ++){
 			String indicator = indicators[level - 1] + " ";
-			for (BrightMarkdownSection section: getAllSectionsAndSubSections(topSection)){
+			for (BrightMarkdownSection section: BrightMarkdownUtil.getAllSectionsAndSubSections(topSection)){
 				if ((section.getType() == MDType.RAW_LINE) && (section.getRawText() != null) && (section.getRawText().trim().startsWith(indicator))){
 					trimAndRemoveRawTextStart(section, indicator.length());
 					section.setOriginalPlainText(removeFormatting(section.getRawText()));
@@ -552,7 +529,7 @@ public class BrightMarkdown {
 	}
 
 	private void parseTableRows(BrightMarkdownSection topSection) {
-		for (BrightMarkdownSection section: getAllSectionsAndSubSections(topSection)){
+		for (BrightMarkdownSection section: BrightMarkdownUtil.getAllSectionsAndSubSections(topSection)){
 			if ((section.getType() == MDType.RAW_LINE) && (section.getRawText() != null) && (section.getRawText().contains(TABLE_CELL_SEPARATOR))){
 				List<String> cellTexts = readCellTexts(section.getRawText().trim());
 				section.setOriginalPlainText(removeFormatting(section.getRawText()));
@@ -638,7 +615,7 @@ public class BrightMarkdown {
 	}
 
 	private void parseLinks(BrightMarkdownSection topSection) {
-		for (BrightMarkdownSection section: getAllSectionsAndSubSections(topSection, true)){
+		for (BrightMarkdownSection section: BrightMarkdownUtil.getAllSectionsAndSubSections(topSection, true)){
 			parseLinksAndImagesForSingleSection(section);
 		}
 	}
@@ -849,9 +826,8 @@ public class BrightMarkdown {
 	}
 
 	private void parseFormatting(BrightMarkdownSection topSection) {
-		for (BrightMarkdownSection section: getAllSectionsAndSubSections(topSection, true)){
-//			parseFormattingForSingleSection(section, type, indicator);
-			List<BrightMarkdownSection> formattedSections = new BrightMarkdownFormattingParser().createFormattedSections(section.getRawText());
+		for (BrightMarkdownSection section: BrightMarkdownUtil.getAllSectionsAndSubSections(topSection, true)){
+			List<BrightMarkdownSection> formattedSections = new BrightMarkdownFormattingParser(logginActive).createFormattedSections(section.getRawText());
 			if (!formattedSections.isEmpty()) {
 				if ((formattedSections.size() != 1) || (hasFormatting(formattedSections.get(0)))){ //: if there is still only one section without formatting: just keep it and there is no need for children with formatting
 					section.setChildren(formattedSections);
@@ -859,10 +835,15 @@ public class BrightMarkdown {
 				}
 			}
 		}
+		
+		logSection("after formatting parser", topSection);
+
+		new BrightMarkdownFormatCascader(logginActive).cascadeFormatting(topSection);
+		logSection("after cascade formatting", topSection);
 	}
 	
 	protected boolean hasFormatting(BrightMarkdownSection section) {
-		return section.isBold() || section.isItalic() || section.isStrikeThrough() || section.isUnderline() || section.getColor() != null || section.getBackgroundColor() != null;
+		return section.isBold() || section.isItalic() || section.isStrikeThrough() || section.isUnderline() || section.getColor() != null || section.getBackgroundColor() != null || section.isBackgroundColorEndTag();
 	}
 	
 	private BrightMarkdownSection createSection(BrightMarkdownSection parent, MDType type, String rawText){
@@ -891,6 +872,8 @@ public class BrightMarkdown {
 		return toString(section, 0);
 	}
 	
+	
+	
 	private String toString(BrightMarkdownSection section, int indent){
 		StringBuilder result = new StringBuilder();
 		for (int i = 0; i < indent; i ++){
@@ -900,7 +883,25 @@ public class BrightMarkdown {
 		if (section.getRawText() != null){
 			rawText = ">>" + section.getRawText() + "<<";
 		}
-		result.append("Sec(type=" + section.getType() + ", rawText=" + rawText + ")\n");
+		String properties = "";
+		properties += BrightMarkdownUtil.addPropertiesString(section.getLevel() != null, "level", section.getLevel());
+		properties += BrightMarkdownUtil.addPropertiesString(section.isBold(), "bold", section.isBold());
+		properties += BrightMarkdownUtil.addPropertiesString(section.isItalic(), "italic", section.isItalic());
+		properties += BrightMarkdownUtil.addPropertiesString(section.isUnderline(), "underline", section.isUnderline());
+		properties += BrightMarkdownUtil.addPropertiesString(section.isStrikeThrough(), "strikeThrough", section.isStrikeThrough());
+		properties += BrightMarkdownUtil.addPropertiesString(section.getColor() != null, "color", section.getColor());
+		properties += BrightMarkdownUtil.addPropertiesString(section.getBackgroundColor() != null, "backgroundColor", section.getBackgroundColor());
+		properties += BrightMarkdownUtil.addPropertiesString(section.isBackgroundColorEndTag(), "backgroundColorEndTag", section.isBackgroundColorEndTag());
+		
+		result.append("Sec(type=" + section.getType() + ", rawText=" + rawText);
+		if (!properties.isEmpty()) {
+			result.append(", properties: {" + properties.trim() + "}");
+		}
+		result.append(")\n");
+		
+		
+		
+		
 		if (section.getChildren() != null){
 			for (BrightMarkdownSection i : section.getChildren()){
 				result.append(toString(i, indent + 4));
@@ -921,8 +922,17 @@ public class BrightMarkdown {
 		}
 	}
 	
+	private void logSection(String message, BrightMarkdownSection topSection) {
+		if (!logginActive) {
+			return;
+		}
+		log(message + ":\n" + toString(topSection));
+	}
+	
 	private void log(String message) {
-		System.out.println("BrightMarkdown> " + message);
+		if (logginActive) {
+			System.out.println("BrightMarkdown> " + message);
+		}
 	}
 
 	public void setFontSizeInMM(FormattingItem formattingItem, int sizeInMM){
@@ -942,10 +952,16 @@ public class BrightMarkdown {
 		return max;
 	}
 	
+	
+	
 	private static List<String> joinLists(List<String> listA, List<String> listB) {
 		List<String> result = new ArrayList<String>(listA);
 		result.addAll(listB);
 		return result;
+	}
+	
+	public void setLogginActive(boolean logginActive) {
+		this.logginActive = logginActive;
 	}
 
 

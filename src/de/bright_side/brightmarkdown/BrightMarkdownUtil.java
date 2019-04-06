@@ -1,6 +1,8 @@
 package de.bright_side.brightmarkdown;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import de.bright_side.brightmarkdown.BrightMarkdownSection.MDType;
 
@@ -42,7 +44,6 @@ public class BrightMarkdownUtil {
 		}
 	}
 
-
 	public static boolean isNumber(String text) {
 		try {
 			Double.valueOf(text);
@@ -51,4 +52,41 @@ public class BrightMarkdownUtil {
 		}
 		return true;
 	}
+	
+	public static String addPropertiesString(boolean condition, String label, Object value) {
+		if (!condition) {
+			return "";
+		}
+		return label + "=" + value + "; ";
+	}
+	
+	public static List<BrightMarkdownSection> getAllSectionsAndSubSections(BrightMarkdownSection section){
+		return getAllSectionsAndSubSections(section, false);
+	}
+	
+	public static List<BrightMarkdownSection> getAllSectionsAndSubSections(BrightMarkdownSection section, boolean excludeCodeBlocks){
+		List<BrightMarkdownSection> result = new ArrayList<>();
+		if ((excludeCodeBlocks) && (section.getType() == MDType.CODE_BLOCK)){
+			return result;
+		}
+		result.add(section);
+		if (section.getChildren() != null){
+			for (BrightMarkdownSection i: section.getChildren()){
+				result.addAll(getAllSectionsAndSubSections(i, excludeCodeBlocks));
+			}
+		}
+		return result;
+	}
+	
+	public static boolean isEmptyOrNull(String text) {
+		return (text == null) || (text.isEmpty());
+	}
+	
+	public static int countChildren(BrightMarkdownSection section) {
+		if (section.getChildren() == null) {
+			return 0;
+		}
+		return section.getChildren().size();
+	}
+
 }
