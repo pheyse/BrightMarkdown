@@ -48,6 +48,8 @@ String documentation = new BrightMarkdown().getDocumentationAsHTML();
    - text foreground and background color
    - source code formatting: Java and XML
    - nested formatting of bold, italic, underline and strikethrough in any order
- 
- 
+ - Version 1.5.0 (2019-04-02)
+   - Background color for table rows and table cells
+ - Version 1.5.1 (2019-04-10)
+   - Bugfix so that HTML creation also works on Android
 

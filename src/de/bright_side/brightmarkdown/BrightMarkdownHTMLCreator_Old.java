@@ -10,37 +10,48 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import de.bright_side.brightmarkdown.BrightMarkdown.FormattingItem;
 import de.bright_side.brightmarkdown.BrightMarkdownSection.MDType;
 
-public class BrightMarkdownHTMLCreator {
+public class BrightMarkdownHTMLCreator_Old {
 	public static final String CODE_BOX_STYLE = "background:lightgrey";
 	public static final Set<String> PARENT_NODES_THAT_DONT_NEED_SPAN = new HashSet<String>(Arrays.asList("span", "p", "td", "th", "div", "b", "i", "u", "h1", "h2", "h3", "h4", "h5"));
 	private static final String SPAN_TAG = "span";
+	private static final String INTERNAL_TEXT_NODE_NAME = "#text";
+	private static final String INTERNAL_NODE_NAME_PREFIX = "#";
 	private Map<FormattingItem, Integer> fontSizesInMM;
 	private boolean loggingActive;
 
-	public BrightMarkdownHTMLCreator(boolean loggingActive, Map<FormattingItem, Integer> fontSizesInMM) {
+	public BrightMarkdownHTMLCreator_Old(boolean loggingActive, Map<FormattingItem, Integer> fontSizesInMM) {
 		this.loggingActive = loggingActive;
 		this.fontSizesInMM = fontSizesInMM;
 	}
 
 	protected String toHTML(BrightMarkdownSection section) throws Exception {
-		BrightXMLNode rootElement = new BrightXMLNode("html");
+		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+		Document document = docBuilder.newDocument();
+		Element rootElement = document.createElement("html");
+		document.appendChild(rootElement);
 		
 		boolean containsTables = checkContainsTables(section);
 		
-		BrightXMLNode headElement = null;
+		Element headElement = null;
 		
 		if ((isCSSStyleSet()) || (containsTables)){
-			headElement = rootElement.appendNode("head");
+			headElement = appendNode(rootElement, "head", null);
 			StringBuilder sb = new StringBuilder();
 			if (isCSSStyleSet()) {
 				sb.append(createFontSizesStyle() + "\n");
@@ -49,27 +60,26 @@ public class BrightMarkdownHTMLCreator {
 				sb.append(createTableStyles() + "\n");
 			}
 			
-			headElement.appendNode("style", sb.toString());
+			appendNode(headElement, "style", sb.toString());
 		}
 		
-		BrightXMLNode bodyElement = rootElement.appendNode("body");
+		Element bodyElement = appendNode(rootElement, "body", null);
 		createHTMLNodes(bodyElement, section);
-		logHTMLString("after HTML nodes creation", rootElement);
+		logHTMLString("after HTML nodes creation", document);
 		
 		removeUnneededNodes(bodyElement);
-		logHTMLString("after removing unneded nodes", rootElement);
-		return createHTMLString(rootElement, true);
+		logHTMLString("after removing unneded nodes", document);
+		return createHTMLString(document, true);
 	}
 
-	private void logHTMLString(String message, BrightXMLNode node) throws Exception {
+	private void logHTMLString(String message, Document document) throws Exception {
 		if (!loggingActive) {
 			return;
 		}
-		log("===================================\n" + message + ":\n" + createHTMLString(node, false) + "===================================");
+		log("===================================\n" + message + ":\n" + createHTMLString(document, false) + "===================================");
 	}
-	
-	private String createHTMLString(BrightXMLNode node, boolean replaceEmptySpanAndParagraphNodes) throws Exception {
-		Document document = node.toW3CDocument();
+
+	private String createHTMLString(Document document, boolean replaceEmptySpanAndParagraphNodes) throws Exception {
 		TransformerFactory transformerFactory = TransformerFactory.newInstance();
 		Transformer transformer = transformerFactory.newTransformer();
 		StringWriter writer = new StringWriter();
@@ -84,39 +94,33 @@ public class BrightMarkdownHTMLCreator {
 		return result;
 	}
 	
-	private void removeUnneededNodes(BrightXMLNode node) {
-		List<BrightXMLNode> childNodes = node.getChildNodes();
-		int index = 0;
-		while (index < childNodes.size()) {
-			removeUnneededNodes(childNodes.get(index));
-			index ++;
+	private void removeUnneededNodes(Node node) {
+		NodeList childNodes = node.getChildNodes();
+		for (int i = 0; i < childNodes.getLength(); i++) {
+			removeUnneededNodes(childNodes.item(i));
 		}
-//		for (BrightXMLNode i: childNodes) {
-//			removeUnneededNodes(i);
-//		}
-		
 		if (!node.getNodeName().equals(SPAN_TAG)) {
 			return;
 		}
 		
-		if (node.hasChildNodes()) {
+		if (hasNonInternalChildNodes(node)) {
 			return;
 		}
 		
-		BrightXMLNode parent = node.getParentNode();
+		Node parent = node.getParentNode();
 		String parentName = parent.getNodeName();
 		if (!PARENT_NODES_THAT_DONT_NEED_SPAN.contains(parentName)) {
 			return;
 		}
 
 		boolean removed = false;
-		if ((!node.hasNonEmptyTextContent()) && (!node.hasChildNodes())){
-			log("removing node because it has no text content and no children: ", node);
+		if ((BrightMarkdownUtil.isEmptyOrNull(getInternalText(node)) && (!hasNonInternalChildNodes(node)))){
+			log("removing node because it has no text content and no children");
 			parent.removeChild(node);
 			removed = true;
-		} else if ((!node.hasAttributes()) && (parent.getChildNodes().size() == 1)){
-			log("removing node because it has no attributes and parent only has this child", node);
-			String nodeText = node.getTextContent();
+		} else if ((!node.hasAttributes()) && (parent.getChildNodes().getLength() == 1)){
+			log("removing node because it has no attributes and parent only has this child");
+			String nodeText = getInternalText(node);
 			parent.removeChild(node);
 			if (!BrightMarkdownUtil.isEmptyOrNull(nodeText)) {
 				parent.setTextContent(parent.getTextContent() + nodeText);
@@ -131,6 +135,36 @@ public class BrightMarkdownHTMLCreator {
 		
 	}
 	
+	private boolean hasNonInternalChildNodes(Node node) {
+		if (!node.hasChildNodes()) {
+			return false;
+		}
+		NodeList childNodes = node.getChildNodes();
+		int size = childNodes.getLength();
+		for (int i = 0; i < size; i++) {
+			Node childNode = childNodes.item(i);
+			if (!childNode.getNodeName().startsWith(INTERNAL_NODE_NAME_PREFIX)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	private String getInternalText(Node node) {
+		if (!node.hasChildNodes()) {
+			return null;
+		}
+		NodeList childNodes = node.getChildNodes();
+		int size = childNodes.getLength();
+		for (int i = 0; i < size; i++) {
+			Node childNode = childNodes.item(i);
+			if (childNode.getNodeName().equals(INTERNAL_TEXT_NODE_NAME)) {
+				return childNode.getTextContent();
+			}
+		}
+		return null;
+	}
+
 	private boolean checkContainsTables(BrightMarkdownSection section) {
 		if (section.getChildren() == null) {
 			return false;
@@ -168,7 +202,7 @@ public class BrightMarkdownHTMLCreator {
 		return !fontSizesInMM.isEmpty();
 	}
 
-	private void createHTMLNodes(BrightXMLNode rootElement, BrightMarkdownSection topSection) throws Exception {
+	private void createHTMLNodes(Element rootElement, BrightMarkdownSection topSection) throws Exception {
 		List<BrightMarkdownSection> items = topSection.getChildren();
 		int pos = 0;
 		while (pos < items.size()){
@@ -178,9 +212,9 @@ public class BrightMarkdownHTMLCreator {
 			} else if (item.getType() == MDType.PARAGRAPH){
 				createHTMLNodesForParagraph(rootElement, item);
 			} else if (item.getType() == MDType.HEADING){
-				addFormattedText(rootElement.appendNode("h" + item.getLevel(), null), item);
+				addFormattedText(appendNode(rootElement, "h" + item.getLevel(), null), item);
 			} else if (item.getType() == MDType.HORIZONTAL_RULE){
-				rootElement.appendNode("hr");
+				appendNode(rootElement, "hr", null);
 			} else if (item.getType() == MDType.CODE_BLOCK){
 				createHTMLNodesForCodeBlock(rootElement, item);
 //				Element node = appendNode(rootElement, "pre", null);
@@ -204,21 +238,22 @@ public class BrightMarkdownHTMLCreator {
 		}
 	}
 	
-	private void createHTMLNodesForCodeBlock(BrightXMLNode parent, BrightMarkdownSection codeBlockSection) {
-		BrightXMLNode node = parent.appendNode("pre", null, "style", CODE_BOX_STYLE);
-		BrightXMLNode codeNode = node.appendNode("code");
+	private void createHTMLNodesForCodeBlock(Element parent, BrightMarkdownSection codeBlockSection) {
+		Element node = appendNode(parent, "pre", null);
+		setAttrib(node, "style", CODE_BOX_STYLE);
+		Element codeNode = appendNode(node, "code", null);
 		
-		codeNode.appendNode("span", BrightMarkdown.ESCAPE_NEW_LINE_IN_CODE_BLOCK); //: start with a line break because otherwise the HTML indent in the first line is treated as an indent in the code
+		appendNode(codeNode, "span", BrightMarkdown.ESCAPE_NEW_LINE_IN_CODE_BLOCK); //: start with a line break because otherwise the HTML indent in the first line is treated as an indent in the code
 		
 		List<BrightMarkdownSection> relevantSections = new ArrayList<>(codeBlockSection.getChildren());
 		removeLastLineBreakIfFound(relevantSections);
 		
 		for (BrightMarkdownSection section: relevantSections) {
 			log("createHTMLNodesForCodeBlock. Section = " + section + ", raw text = >>" + section.getRawText() + "<<");
-			node = codeNode.appendNode("span", section.getRawText());
+			node = appendNode(codeNode, "span", section.getRawText());
 			String style = getCodeBlockStyle(section.getType());
 			if (style != null) {
-				node.setAttribute("style", style);
+				setAttrib(node, "style", style);
 			}
 		}
 	}
@@ -255,48 +290,68 @@ public class BrightMarkdownHTMLCreator {
 		return null;
 	}
 
-	private void createHTMLNodesForTableOfContents(BrightXMLNode rootElement, BrightMarkdownSection topSection) {
+	private Element appendNode(Element parentElement, String tag) {
+		return appendNode(parentElement, tag, null);
+	}
+
+	private Element appendNode(Element parentElement, String tag, String content) {
+		if (parentElement == null){
+			throw new RuntimeException("Could not add node with tag '" + tag + "' to parent element which is null");
+		}
+		Element child;
+		try{
+			child = parentElement.getOwnerDocument().createElement(tag);
+		} catch (RuntimeException t){
+			throw new RuntimeException("Could not add node with tag '" + tag + "'", t);
+		}
+		parentElement.appendChild(child);
+ 		log("setting text content >>" + content + "<<");
+		child.setTextContent(content);
+		return child;
+	}
+
+	private void createHTMLNodesForTableOfContents(Element rootElement, BrightMarkdownSection topSection) {
 		List<LevelAndTitle> headingItems = getHeadingItems(topSection);
 		if (headingItems == null){
 			return;
 		}
 		
-		BrightXMLNode root = rootElement.appendNode("span");
-		Map<Integer, BrightXMLNode> levelToListNode = new TreeMap<Integer, BrightXMLNode>();
+		Element root = appendNode(rootElement, "span", null);
+		Map<Integer, Element> levelToListNode = new TreeMap<Integer, Element>();
 		for (LevelAndTitle i: headingItems) {
-			BrightXMLNode element = getOrCreateListElement(root, levelToListNode, i.getLevel());
+			Element element = getOrCreateListElement(root, levelToListNode, i.getLevel());
 			BrightMarkdown.removeDeeperLevels(levelToListNode, i.getLevel());
-			element.appendNode("li", i.getTitle());
+			appendNode(element, "li", i.getTitle());
 		}			
 	}
 
-	private BrightXMLNode getOrCreateListElement(BrightXMLNode root, Map<Integer, BrightXMLNode> levelToListNode, int level) {
-		BrightXMLNode element = levelToListNode.get(level);
+	private Element getOrCreateListElement(Element root, Map<Integer, Element> levelToListNode, int level) {
+		Element element = levelToListNode.get(level);
 		if (element == null){
 			if (level == 1){
-				element = root.appendNode("ul");
+				element = appendNode(root, "ul", null);
 				levelToListNode.put(level, element);
 			} else {
-				BrightXMLNode parentElement = levelToListNode.get(level - 1);
+				Element parentElement = levelToListNode.get(level - 1);
 				if (parentElement == null){
 					parentElement = getOrCreateListElement(root, levelToListNode, level - 1);
 				}
-				element = parentElement.appendNode("ul");
+				element = appendNode(parentElement, "ul", null);
 				levelToListNode.put(level, element);
 			}
 		}
 		return element;
 	}
 
-	private void createHTMLNodesForRawLine(BrightXMLNode rootElement, BrightMarkdownSection item) throws Exception {
+	private void createHTMLNodesForRawLine(Element rootElement, BrightMarkdownSection item) throws Exception {
 		if ((item.getChildren() != null) || (notEmpty(item.getRawText()))){
-			BrightXMLNode node = rootElement.appendNode("p");
+			Element node = appendNode(rootElement, "p", null);
 			addFormattedText(node, item);
 		}
 	}
 
-	private void createHTMLNodesForParagraph(BrightXMLNode rootElement, BrightMarkdownSection item) throws Exception {
-		BrightXMLNode paragraphNode = rootElement.appendNode("p");
+	private void createHTMLNodesForParagraph(Element rootElement, BrightMarkdownSection item) throws Exception {
+		Element paragraphNode = appendNode(rootElement, "p", null);
 		int numberOfChildren = item.getChildren().size();
 		if (numberOfChildren == 1){
 			//: if there is only one item: no need for span and br-tags in-between
@@ -307,31 +362,36 @@ public class BrightMarkdownHTMLCreator {
 		
 		int index = 0;
 		for (BrightMarkdownSection i: item.getChildren()){
-			BrightXMLNode paragraphElementNode = paragraphNode.appendNode("span");
+			Element paragraphElementNode = appendNode(paragraphNode, "span", null);
 			addFormattedText(paragraphElementNode, i);
 			
 			if (index < numberOfChildren - 1){ //: not the last item
-				paragraphNode.appendNode("br");
+				appendNode(paragraphNode, "br", null);
 			}
 			
 			index ++;
 		}
 	}
 	
-	private void createHTMLNodesForUncheckedItem(BrightXMLNode rootElement, BrightMarkdownSection item) throws Exception {
-		BrightXMLNode node = rootElement.appendNode("input", null, "type", "checkbox", "disabled", "true");
+	private void createHTMLNodesForUncheckedItem(Element rootElement, BrightMarkdownSection item) throws Exception {
+		Element node = appendNode(rootElement, "input", null);
+		setAttrib(node, "type", "checkbox");
+		setAttrib(node, "disabled", "true");
 		addFormattedText(node, item);
-		rootElement.appendNode("br");
+		appendNode(rootElement, "br", null);
 	}
 
-	private void createHTMLNodesForCheckedItem(BrightXMLNode rootElement, BrightMarkdownSection item) throws Exception {
-		BrightXMLNode node = rootElement.appendNode("input", null, "type", "checkbox", "disabled", "true", "checked", "true");
+	private void createHTMLNodesForCheckedItem(Element rootElement, BrightMarkdownSection item) throws Exception {
+		Element node = appendNode(rootElement, "input", null);
+		setAttrib(node, "type", "checkbox");
+		setAttrib(node, "disabled", "true");
+		setAttrib(node, "checked", "true");
 		addFormattedText(node, item);
-		rootElement.appendNode("br");
+		appendNode(rootElement, "br", null);
 	}
 
-	private int createHTMLNodesForTable(BrightXMLNode rootElement, List<BrightMarkdownSection> items, int pos, BrightMarkdownSection item) throws Exception {
-		BrightXMLNode tableNode = rootElement.appendNode("table");
+	private int createHTMLNodesForTable(Element rootElement, List<BrightMarkdownSection> items, int pos, BrightMarkdownSection item) throws Exception {
+		Element tableNode = appendNode(rootElement, "table", null);
 		boolean firstRowIsHeader = false;
 		
 		List<BrightMarkdownSection> tableItems = new ArrayList<BrightMarkdownSection>();
@@ -352,7 +412,7 @@ public class BrightMarkdownHTMLCreator {
 		int numberOfColumns = countMaxNumberOfColumns(tableItems);
 		boolean firstRow = true;
 		for (BrightMarkdownSection rowSecion: tableItems) {
-			BrightXMLNode rowNode = tableNode.appendNode("tr");
+			Element rowNode = appendNode(tableNode, "tr", null);
 			
 			if (rowSecion.getBackgroundColor() != null) {
 				setBackgroundColorStyle(rowNode, rowSecion.getBackgroundColor());
@@ -366,7 +426,7 @@ public class BrightMarkdownHTMLCreator {
 				if (cellSection.getType() != MDType.TABLE_CELL) {
 					throw new RuntimeException("Expected type table cell, but found: " + cellSection.getType());
 				}
-				BrightXMLNode cellNode = rowNode.appendNode(cellTagName, null);
+				Element cellNode = appendNode(rowNode, cellTagName, null);
 				if (cellSection.getBackgroundColor() != null) {
 					setBackgroundColorStyle(cellNode, cellSection.getBackgroundColor());
 				}
@@ -375,7 +435,7 @@ public class BrightMarkdownHTMLCreator {
 			}
 			int missingCells = numberOfColumns - rowSecion.getChildren().size();
 			for (int i = 0; i < missingCells; i++) {
-				rowNode.appendNode("td");
+				appendNode(rowNode, "td", null);
 			}
 			firstRow = false;
 		}
@@ -399,20 +459,20 @@ public class BrightMarkdownHTMLCreator {
 		}
 	}
 
-	private int createHTMLNodesForListItems(BrightXMLNode rootElement, List<BrightMarkdownSection> items, int pos, BrightMarkdownSection item) throws Exception {
+	private int createHTMLNodesForListItems(Element rootElement, List<BrightMarkdownSection> items, int pos, BrightMarkdownSection item) throws Exception {
 		int currentLevel = 1;
-		Map<Integer, BrightXMLNode> levelToListNodeMap = new TreeMap<>();
+		Map<Integer, Element> levelToListNodeMap = new TreeMap<>();
 		String listTag = getHTMLListTag(item.getType());
-		BrightXMLNode listNode = rootElement.appendNode(listTag);
+		Element listNode = appendNode(rootElement, listTag, null);
 		levelToListNodeMap.put(currentLevel, listNode);
 		
 		while (item.getLevel() > currentLevel){
 			currentLevel ++;
-			listNode = listNode.appendNode(listTag);
+			listNode = appendNode(listNode, listTag, null);
 			levelToListNodeMap.put(currentLevel, listNode);
 		}
 		
-		BrightXMLNode itemNode = listNode.appendNode("li");
+		Element itemNode = appendNode(listNode, "li", null);
 		addFormattedText(itemNode, item);
 		while (nextChildHasType(items, pos, MDType.BULLET_POINT, MDType.NUMBERED_ITEM)){
 			pos ++;
@@ -420,7 +480,7 @@ public class BrightMarkdownHTMLCreator {
 			listTag = getHTMLListTag(item.getType());
 			while (item.getLevel() > currentLevel){
 				currentLevel ++;
-				listNode = listNode.appendNode(listTag);
+				listNode = appendNode(listNode, listTag, null);
 				levelToListNodeMap.put(currentLevel, listNode);
 			}
 			if (item.getLevel() < currentLevel){
@@ -432,60 +492,64 @@ public class BrightMarkdownHTMLCreator {
 				currentLevel = item.getLevel();
 			}
 			
-			itemNode = listNode.appendNode("li");
+			itemNode = appendNode(listNode, "li", null);
 			addFormattedText(itemNode, item);
 		}
 		return pos;
 	}
 
-	private void addFormattedText(BrightXMLNode node, BrightMarkdownSection item) throws Exception {
+	private void addFormattedText(Element node, BrightMarkdownSection item) throws Exception {
 		if (item.getRawText() != null){
 			node.setTextContent(item.getRawText());
 		} else {
 			for (BrightMarkdownSection child: item.getChildren()){
 				if (child.getType() == MDType.LINK){
 					if (child.getRawText() != null){
-						node.appendNode("a", child.getRawText(), "href", child.getLocation());
+						Element linkNode = appendNode(node, "a", child.getRawText());
+						setAttrib(linkNode, "href", child.getLocation());
 					} else {
-						BrightXMLNode linkNode = node.appendNode("a", null, "href", child.getLocation());
+						Element linkNode = appendNode(node, "a", null);
+						setAttrib(linkNode, "href", child.getLocation());
 						if (child.getChildren() != null){
 							addFormattedText(linkNode, child);
 						}
 					}
 				} else if (child.getType() == MDType.IMAGE){
-					BrightXMLNode imageNode = node.appendNode("img", null, "src", child.getLocation());
+					Element imageNode = appendNode(node, "img");
+					setAttrib(imageNode, "src", child.getLocation());
 					if (child.getImageHeight() != null) {
-						imageNode.setAttribute("height", child.getImageHeight());
+						setAttrib(imageNode, "height", child.getImageHeight());
 					}
 					if (child.getImageWidth() != null) {
-						imageNode.setAttribute("width", child.getImageWidth());
+						setAttrib(imageNode, "width", child.getImageWidth());
 					}
 					if (child.getImageAltText() != null) {
-						imageNode.setAttribute("alt", child.getImageAltText());
+						setAttrib(imageNode, "alt", child.getImageAltText());
 					}
 				} else {
-					BrightXMLNode currentNode = node;
+					Element currentNode = node;
 					if (child.isBold()) {
-						currentNode = currentNode.appendNode("b");
+						currentNode = appendNode(currentNode, "b");
 					}
 					if (child.isItalic()) {
-						currentNode = currentNode.appendNode("i");
+						currentNode = appendNode(currentNode, "i");
 					}
 					if (child.isUnderline()) {
-						currentNode = currentNode.appendNode("u");
+						currentNode = appendNode(currentNode, "u");
 					}
 					if (child.isStrikeThrough()) {
-						currentNode = currentNode.appendNode("strike");
+						currentNode = appendNode(currentNode, "strike");
 					}
 					if (child.getColor() != null) {
-						currentNode = currentNode.appendNode("span", null, "style", "color:" + child.getColor());
+						currentNode = appendNode(currentNode, "span");
+						setAttrib(currentNode, "style", "color:" + child.getColor());
 					}
 					if (child.getBackgroundColor() != null) {
-						currentNode = currentNode.appendNode("span");
+						currentNode = appendNode(currentNode, "span");
 						setBackgroundColorStyle(currentNode, child.getBackgroundColor());
 					}
 					if (currentNode == node) { //: there is no formatting and no sub-node has been created, then create a sub node for the text
-						currentNode = currentNode.appendNode("span");
+						currentNode = appendNode(currentNode, "span");
 					}
 
 					currentNode.setTextContent(child.getRawText());
@@ -494,10 +558,65 @@ public class BrightMarkdownHTMLCreator {
 		}		
 	}
 
-	private void setBackgroundColorStyle(BrightXMLNode currentNode, String backgroundColor) {
-		currentNode.setAttribute("style", "background-color:" + backgroundColor);
+	private void setBackgroundColorStyle(Element currentNode, String backgroundColor) {
+		setAttrib(currentNode, "style", "background-color:" + backgroundColor);
 	}
 	
+	
+	
+//	private void addFormattedText(Element node, BrightMarkdownSection item) throws Exception {
+//		if (item.getRawText() != null){
+//			node.setTextContent(item.getRawText());
+//		} else {
+//			for (BrightMarkdownSection child: item.getChildren()){
+//				if (child.getType() == MDType.BOLD){
+//					log("creating bold tag with content >>" + child.getRawText() + "<< and children: " + child.getChildren());
+//					if (hasChildren(child)){
+//						addFormattedText(appendNode(node, "b", null), child);
+//					} else {
+//						appendNodeIfConcentNotEmpty(node, "b", child.getRawText());
+//					}
+//				} else if (child.getType() == MDType.ITALIC){
+//					if (hasChildren(child)){
+//						addFormattedText(appendNode(node, "i", null), child);
+//					} else {
+//						appendNodeIfConcentNotEmpty(node, "i", child.getRawText());
+//					}
+//				} else if (child.getType() == MDType.UNDERLINE){
+//					if (hasChildren(child)){
+//						addFormattedText(appendNode(node, "u", null), child);
+//					} else {
+//						appendNodeIfConcentNotEmpty(node, "u", child.getRawText());
+//					}
+//				} else if (child.getType() == MDType.STRIKETHROUGH){
+//					if (hasChildren(child)){
+//						addFormattedText(appendNode(node, "strike", null), child);
+//					} else {
+//						appendNodeIfConcentNotEmpty(node, "strike", child.getRawText());
+//					}
+//				} else if (child.getType() == MDType.LINK){
+//					if (child.getRawText() != null){
+//						Element linkNode = appendNode(node, "a", child.getRawText());
+//						setAttrib(linkNode, "href", child.getLocation());
+//					} else {
+//						Element linkNode = appendNode(node, "a", null);
+//						setAttrib(linkNode, "href", child.getLocation());
+//						if (child.getChildren() != null){
+//							addFormattedText(linkNode, child);
+//						}
+//					}
+//				} else if (child.getType() == MDType.PLAIN_TEXT){
+//					appendNodeIfConcentNotEmpty(node, "span", child.getRawText());
+//					if (child.getChildren() != null){
+//						addFormattedText(node, child);
+//					}
+//				} else {
+//					throw new Exception("Unexpected type within text: " + child.getType());
+//				}
+//			}
+//		}		
+//	}
+//	
 	private boolean nextChildHasType(List<BrightMarkdownSection> items, int pos, MDType type) {
 		int checkPos = pos + 1;
 		if (checkPos >= items.size()){
@@ -514,16 +633,16 @@ public class BrightMarkdownHTMLCreator {
 		MDType type = items.get(checkPos).getType();
 		return (type == typeA) || (type == typeB);
 	}
+	
 
+	private Element setAttrib(Element element, String attributeName, String attributeValue) {
+		element.setAttribute(attributeName, attributeValue);
+		return element;
+	}
+	
 	private void log(String message) {
 		if (loggingActive) {
 			System.out.println("BrightMarkdownHTMLCreator> " + message);
-		}
-	}
-
-	private void log(String message, BrightXMLNode node) {
-		if (loggingActive) {
-			System.out.println("BrightMarkdownHTMLCreator> " + message + node);
 		}
 	}
 

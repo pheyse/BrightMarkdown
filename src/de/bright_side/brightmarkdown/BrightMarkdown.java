@@ -16,7 +16,7 @@ import de.bright_side.brightmarkdown.BrightMarkdownUtil.PosAndTag;
 /**
  * 
  * @author Philip Heyse
- * @version 1.5.0
+ * @version 1.5.1
  * 
  * version 1.1.2 (2017-12-08): empty lines, nested text format fix
  * version 1.1.3 (2018-01-05): Bug fix for bullet point level up
@@ -24,6 +24,7 @@ import de.bright_side.brightmarkdown.BrightMarkdownUtil.PosAndTag;
  * version 1.3.0 (2018-03-03): Added table feature, underline formatting and tag to disable parsing
  * version 1.4.0 (2018-06-21): Images, combined numbered and bullet point lists with indents, text foreground and background color, source code formatting, nested formatting of bold, italic, underline and strikethrough in any order
  * version 1.5.0 (2019-04-02): Background color for table rows and table cells
+ * version 1.5.1 (2019-04-10): Bugfix so that HTML creation also works on Android
  *
  */
 public class BrightMarkdown {
@@ -75,16 +76,22 @@ public class BrightMarkdown {
 	
 	public static enum FormattingItem {H1, H2, H3, H4, H5, H6}
 	private Map<FormattingItem, Integer> fontSizesInMM = new EnumMap<>(FormattingItem.class);
-	private boolean logginActive = false;
+	private boolean loggingActive = false;
 
 	private static final Map<String, BrightMarkdownCodeFormat> CODE_FORMATS = new BrightMarkdownCodeFormatDefinition().createCodeFormats();
 	private static final String IMAGE_WIDTH_LABEL = "width=";
 	private static final String IMAGE_HEIGHT_LABEL = "height=";
 	
+	public BrightMarkdown() {
+	}
+	
+	protected BrightMarkdown(boolean loggingActive) {
+		this.loggingActive = loggingActive;
+	}
 	
 	public String createHTML(String markdownText) throws Exception{
 		BrightMarkdownSection section = parseAll(getUseMarkdownText(markdownText));
-		return new BrightMarkdownHTMLCreator(logginActive, fontSizesInMM).toHTML(section);
+		return new BrightMarkdownHTMLCreator(loggingActive, fontSizesInMM).toHTML(section);
 	}
 	
 	private String getUseMarkdownText(String markdownText) {
@@ -827,7 +834,7 @@ public class BrightMarkdown {
 
 	private void parseFormatting(BrightMarkdownSection topSection) {
 		for (BrightMarkdownSection section: BrightMarkdownUtil.getAllSectionsAndSubSections(topSection, true)){
-			List<BrightMarkdownSection> formattedSections = new BrightMarkdownFormattingParser(logginActive).createFormattedSections(section.getRawText());
+			List<BrightMarkdownSection> formattedSections = new BrightMarkdownFormattingParser(loggingActive).createFormattedSections(section.getRawText());
 			if (!formattedSections.isEmpty()) {
 				if ((formattedSections.size() != 1) || (hasFormatting(formattedSections.get(0)))){ //: if there is still only one section without formatting: just keep it and there is no need for children with formatting
 					section.setChildren(formattedSections);
@@ -838,7 +845,7 @@ public class BrightMarkdown {
 		
 		logSection("after formatting parser", topSection);
 
-		new BrightMarkdownFormatCascader(logginActive).cascadeFormatting(topSection);
+		new BrightMarkdownFormatCascader(loggingActive).cascadeFormatting(topSection);
 		logSection("after cascade formatting", topSection);
 	}
 	
@@ -923,14 +930,14 @@ public class BrightMarkdown {
 	}
 	
 	private void logSection(String message, BrightMarkdownSection topSection) {
-		if (!logginActive) {
+		if (!loggingActive) {
 			return;
 		}
 		log(message + ":\n" + toString(topSection));
 	}
 	
 	private void log(String message) {
-		if (logginActive) {
+		if (loggingActive) {
 			System.out.println("BrightMarkdown> " + message);
 		}
 	}
@@ -961,7 +968,7 @@ public class BrightMarkdown {
 	}
 	
 	public void setLogginActive(boolean logginActive) {
-		this.logginActive = logginActive;
+		this.loggingActive = logginActive;
 	}
 
 
