@@ -25,6 +25,7 @@ import de.bright_side.brightmarkdown.BrightMarkdownUtil.PosAndTag;
  * version 1.4.0 (2018-06-21): Images, combined numbered and bullet point lists with indents, text foreground and background color, source code formatting, nested formatting of bold, italic, underline and strikethrough in any order
  * version 1.5.0 (2019-04-02): Background color for table rows and table cells
  * version 1.5.1 (2019-04-10): Bugfix so that HTML creation also works on Android
+ * version 1.5.2 (2019-08-09): Bugfix so that HTML table styles use their own CSS class
  *
  */
 public class BrightMarkdown {

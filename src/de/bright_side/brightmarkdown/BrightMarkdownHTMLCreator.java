@@ -26,6 +26,7 @@ public class BrightMarkdownHTMLCreator {
 	private static final String SPAN_TAG = "span";
 	private Map<FormattingItem, Integer> fontSizesInMM;
 	private boolean loggingActive;
+	private static final String CSS_CLASS_NAME = "brightmarkdown";
 
 	public BrightMarkdownHTMLCreator(boolean loggingActive, Map<FormattingItem, Integer> fontSizesInMM) {
 		this.loggingActive = loggingActive;
@@ -145,11 +146,12 @@ public class BrightMarkdownHTMLCreator {
 
 	private StringBuilder createTableStyles() {
 		StringBuilder result = new StringBuilder();
-		result.append("table {border-collapse: collapse;}\n");
-		result.append("td, th {border: 1px solid black; padding: 3px;}\n");
-		result.append("th {background-color: #a0a0a0;}\n");
-		result.append("tr:nth-child(odd) {background-color: #d8d8d8;}\n");
-		result.append("tr:nth-child(even) {background-color: #ffffff;}\n");
+		result.append("table." + CSS_CLASS_NAME + "{border-collapse: collapse;}\n");
+		result.append("table." + CSS_CLASS_NAME + " td {border: 1px solid black; padding: 3px;}\n");
+		result.append("table." + CSS_CLASS_NAME + " th {border: 1px solid black; padding: 3px;}\n");
+		result.append("table." + CSS_CLASS_NAME + " th {background-color: #a0a0a0;}\n");
+		result.append("table." + CSS_CLASS_NAME + " tr:nth-child(odd) {background-color: #d8d8d8;}\n");
+		result.append("table." + CSS_CLASS_NAME + " tr:nth-child(even) {background-color: #ffffff;}\n");
 		return result;
 	}
 
@@ -331,7 +333,7 @@ public class BrightMarkdownHTMLCreator {
 	}
 
 	private int createHTMLNodesForTable(BrightXMLNode rootElement, List<BrightMarkdownSection> items, int pos, BrightMarkdownSection item) throws Exception {
-		BrightXMLNode tableNode = rootElement.appendNode("table");
+		BrightXMLNode tableNode = rootElement.appendNode("table", null, "class", CSS_CLASS_NAME);
 		boolean firstRowIsHeader = false;
 		
 		List<BrightMarkdownSection> tableItems = new ArrayList<BrightMarkdownSection>();

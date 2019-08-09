@@ -18,7 +18,8 @@ import de.bright_side.brightmarkdown.BrightMarkdownSection.MDType;
  *
  */
 public class TestBrightMarkdown {
-	private static final String TABLE_STYLE = "<style>table {border-collapse: collapse;}td, th {border: 1px solid black; padding: 3px;}th {background-color: #a0a0a0;}tr:nth-child(odd) {background-color: #d8d8d8;}tr:nth-child(even) {background-color: #ffffff;}</style>";
+//	private static final String TABLE_STYLE = "<style>table {border-collapse: collapse;}td, th {border: 1px solid black; padding: 3px;}th {background-color: #a0a0a0;}tr:nth-child(odd) {background-color: #d8d8d8;}tr:nth-child(even) {background-color: #ffffff;}</style>";
+	private static final String TABLE_STYLE = "<style>table.brightmarkdown{border-collapse: collapse;}table.brightmarkdown td {border: 1px solid black; padding: 3px;}table.brightmarkdown th {border: 1px solid black; padding: 3px;}table.brightmarkdown th {background-color: #a0a0a0;}table.brightmarkdown tr:nth-child(odd) {background-color: #d8d8d8;}table.brightmarkdown tr:nth-child(even) {background-color: #ffffff;}</style>";
 
 	private String removeFormatting(String htmlString) {
 		return htmlString.replace("\r", "").replace("\n", "").replace("    ", "");
@@ -1301,7 +1302,7 @@ public class TestBrightMarkdown {
 		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
-		expected += "<body><p>My Table:</p><table>";
+		expected += "<body><p>My Table:</p><table class=\"brightmarkdown\">";
 		expected += "<tr><td>c1-1</td><td>c1-2</td><td>c1-3</td></tr>";
 		expected += "<tr><td>c2-1</td><td>c2-2</td><td>c2-3</td></tr>";
 		expected += "<tr><td>c3-1</td><td>c3-2</td><td>c3-3</td></tr>";
@@ -1325,10 +1326,12 @@ public class TestBrightMarkdown {
 		System.out.println("input:\n" + input);
 		
 		
+		System.out.println("output with formatting:>>\n" + new BrightMarkdown().createHTML(input) + "\n<<");
+		
 		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
-		expected += "<body><p>My Table:</p><table>";
+		expected += "<body><p>My Table:</p><table class=\"brightmarkdown\">";
 		expected += "<tr><th>h-1</th><th>h-2</th><th>h-3</th></tr>";
 		expected += "<tr><td>c1-1</td><td>c1-2</td><td>c1-3</td></tr>";
 		expected += "<tr><td>c2-1</td><td>c2-2</td><td>c2-3</td></tr>";
@@ -1356,7 +1359,7 @@ public class TestBrightMarkdown {
 		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
-		expected += "<body><p>My Table:</p><table>";
+		expected += "<body><p>My Table:</p><table class=\"brightmarkdown\">";
 		expected += "<tr><td>c1-1</td><td>c1-2</td><td>c1-3</td></tr>";
 		expected += "</table><p>More text...</p></body></html>";
 		System.out.println("==========================");
@@ -1378,7 +1381,7 @@ public class TestBrightMarkdown {
 		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
-		expected += "<body><p>My Table:</p><table>";
+		expected += "<body><p>My Table:</p><table class=\"brightmarkdown\">";
 		expected += "<tr><th>h-1</th><th>h-2</th><th>h-3</th></tr>";
 		expected += "</table><p>More text...</p></body></html>";
 		System.out.println("==========================");
@@ -1405,7 +1408,7 @@ public class TestBrightMarkdown {
 		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
-		expected += "<body><p>My Table:</p><table>";
+		expected += "<body><p>My Table:</p><table class=\"brightmarkdown\">";
 		expected += "<tr><td>c1-1</td><td>c1-2</td><td>c1-3</td></tr>";
 		expected += "<tr><td>c2-1</td><td></td><td>c2-3</td></tr>";
 		expected += "<tr><td>c3-1</td><td>c3-2</td><td>c3-3</td></tr>";
@@ -1431,7 +1434,7 @@ public class TestBrightMarkdown {
 		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
-		expected += "<body><p>My Table:</p><table>";
+		expected += "<body><p>My Table:</p><table class=\"brightmarkdown\">";
 		expected += "<tr><td>c1-1</td><td>c1-2</td><td>c1-3</td></tr>";
 		expected += "<tr><td>c2-1</td><td>c2-2</td><td></td></tr>";
 		expected += "<tr><td>c3-1</td><td>c3-2</td><td>c3-3</td></tr>";
@@ -1458,7 +1461,7 @@ public class TestBrightMarkdown {
 		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
-		expected += "<body><p>My Table:</p><table>";
+		expected += "<body><p>My Table:</p><table class=\"brightmarkdown\">";
 		expected += "<tr><td>c1-1</td><td>c1-2</td><td>c1-3</td></tr>";
 		expected += "<tr><td>c2-1</td><td>c2-2</td><td></td></tr>";
 		expected += "<tr><td>c3-1</td><td>c3-2</td><td>c3-3</td></tr>";
@@ -1484,7 +1487,7 @@ public class TestBrightMarkdown {
 		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
-		expected += "<body><p>My Table:</p><table>";
+		expected += "<body><p>My Table:</p><table class=\"brightmarkdown\">";
 		expected += "<tr><td>c1-1</td><td>c1-2</td><td>c1-3</td></tr>";
 		expected += "<tr><td></td><td>c2-2</td><td>c2-3</td></tr>";
 		expected += "<tr><td>c3-1</td><td>c3-2</td><td>c3-3</td></tr>";
@@ -1511,7 +1514,7 @@ public class TestBrightMarkdown {
 		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
-		expected += "<body><p>My Table:</p><table>";
+		expected += "<body><p>My Table:</p><table class=\"brightmarkdown\">";
 		expected += "<tr><td>c1-1</td><td>c1-2</td><td>c1-3</td><td></td></tr>";
 		expected += "<tr><td>c2-1</td><td>c2-2</td><td>c2-3</td><td>c2-4</td></tr>";
 		expected += "<tr><td>c3-1</td><td>c3-2</td><td>c3-3</td><td></td></tr>";
@@ -1536,7 +1539,7 @@ public class TestBrightMarkdown {
 		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
-		expected += "<body><p>My Table:</p><table>";
+		expected += "<body><p>My Table:</p><table class=\"brightmarkdown\">";
 		expected += "<tr><td>c1-1</td><td>c1-2</td><td>c1-3</td></tr>";
 		expected += "<tr><td>c2-1</td><td>Hello the | is kept</td><td>c2-3</td></tr>";
 		expected += "</table><p>More text...</p></body></html>";
@@ -1570,7 +1573,7 @@ public class TestBrightMarkdown {
 		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
-		expected += "<body><p>My Table:</p><table>";
+		expected += "<body><p>My Table:</p><table class=\"brightmarkdown\">";
 		expected += "<tr><td>c1-1</td><td>c1-2</td></tr>";
 		expected += "</table><p>More text...</p></body></html>";
 		System.out.println("==========================");
@@ -1594,7 +1597,7 @@ public class TestBrightMarkdown {
 		String result = removeFormatting(new BrightMarkdown().createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
-		expected += "<body><p>My Table:</p><table>";
+		expected += "<body><p>My Table:</p><table class=\"brightmarkdown\">";
 		expected += "<tr><td>c1-1</td><td>c1-2</td><td>c1-3</td></tr>";
 		expected += "<tr><td>c2-1</td><td><span>Hello </span><b>bold</b></td><td>c2-3</td></tr>";
 		expected += "</table><p>More text...</p></body></html>";
@@ -2006,7 +2009,7 @@ public class TestBrightMarkdown {
 		String result = removeFormatting(brightMarkdown.createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
-		expected += "<body><p>My Table:</p><table>";
+		expected += "<body><p>My Table:</p><table class=\"brightmarkdown\">";
 		expected += "<tr><th>h-1</th><th>h-2</th><th>h-3</th></tr>";
 		expected += "<tr><td>c1-1</td><td>c1-2</td><td>c1-3</td></tr>";
 		expected += "<tr style=\"background-color:red\"><td>c2-1</td><td>c2-2</td><td>c2-3</td></tr>";
@@ -2036,7 +2039,7 @@ public class TestBrightMarkdown {
 		String result = removeFormatting(brightMarkdown.createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
-		expected += "<body><p>My Table:</p><table>";
+		expected += "<body><p>My Table:</p><table class=\"brightmarkdown\">";
 		expected += "<tr><th>h-1</th><th>h-2</th><th>h-3</th></tr>";
 		expected += "<tr><td>c1-1</td><td>c1-2</td><td>c1-3</td></tr>";
 		expected += "<tr style=\"background-color:red\"><td>c2-1</td><td>c2-2</td><td>c2-3</td></tr>";
@@ -2068,7 +2071,7 @@ public class TestBrightMarkdown {
 		String result = removeFormatting(brightMarkdown.createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
-		expected += "<body><p>My Table:</p><table>";
+		expected += "<body><p>My Table:</p><table class=\"brightmarkdown\">";
 		expected += "<tr><th>h-1</th><th>h-2</th><th>h-3</th></tr>";
 		expected += "<tr><td style=\"background-color:green\">c1-1</td><td>c1-2</td><td>c1-3</td></tr>";
 		expected += "<tr style=\"background-color:red\"><td>c2-1</td><td>c2-2</td><td>c2-3</td></tr>";
@@ -2106,7 +2109,7 @@ public class TestBrightMarkdown {
 		String result = removeFormatting(brightMarkdown.createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
-		expected += "<body><p>My Table:</p><table>";
+		expected += "<body><p>My Table:</p><table class=\"brightmarkdown\">";
 		expected += "<tr><th>h-1</th><th>h-2</th><th>h-3</th></tr>";
 		expected += "<tr><td style=\"background-color:red\">c1-1</td><td>c1-2</td><td>c1-3</td></tr>";
 		expected += "<tr><td>c2-1</td><td style=\"background-color:green\">c2-2</td><td>c2-3</td></tr>";
@@ -2142,7 +2145,7 @@ public class TestBrightMarkdown {
 		String result = removeFormatting(brightMarkdown.createHTML(input));
 		String expected = "<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">";
 		expected += TABLE_STYLE + "</head>";
-		expected += "<body><p>My Table:</p><table>";
+		expected += "<body><p>My Table:</p><table class=\"brightmarkdown\">";
 		expected += "<tr><th>h-1</th><th>h-2</th><th>h-3</th></tr>";
 		expected += "<tr><td>c1-1</td><td>c1-2</td><td>c1-3</td></tr>";
 		expected += "<tr><td>c2-1</td><td><span style=\"background-color:green\">c2</span><span style=\"background-color:red\">-2</span></td><td>c2-3</td></tr>";

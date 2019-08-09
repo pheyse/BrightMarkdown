@@ -1,6 +1,6 @@
 # BrightMarkdown
 BrightMarkdown is a light weight java library to process markdown text.
-Created 2017-2018 by Philip Heyse
+Created 2017-2019 by Philip Heyse
 
 ## License
 Apace V2
@@ -52,4 +52,5 @@ String documentation = new BrightMarkdown().getDocumentationAsHTML();
    - Background color for table rows and table cells
  - Version 1.5.1 (2019-04-10)
    - Bugfix so that HTML creation also works on Android
-
+ - Version 1.5.2 (2019-08-09)
+   - Bugfix so that HTML table styles use their own CSS class
