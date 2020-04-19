@@ -146,7 +146,7 @@ table.brightmarkdown tr:nth-child(even) {background-color: #ffffff;}
 
 
 ## Example
-![Example](https://github.com/pheyse/BrightMarkdown/blob/master/examples/demo.png "Example" | width=60mm)
+![Example](https://github.com/pheyse/BrightMarkdown/blob/master/examples/demo.png "Example")
 
 
  
