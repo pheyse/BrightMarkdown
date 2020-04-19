@@ -1,0 +1,10 @@
+open module de.bright_side.brightmarkdown {
+//: copied from module-info.java in src/main/java
+	requires java.xml;
+	exports de.bright_side.brightmarkdown;
+
+//: additional dependencies for testing
+	requires org.junit.jupiter.api; 
+    requires org.assertj.core;      
+    requires org.mockito;           
+}
