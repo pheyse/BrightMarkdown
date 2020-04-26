@@ -142,6 +142,9 @@ public class BMHtmlCreator {
 		}
 		
 		BrightXmlNode parent = node.getParentNode();
+		if (parent == null) {
+			return;
+		}
 		String parentName = parent.getNodeName();
 		if (!PARENT_NODES_THAT_DONT_NEED_SPAN.contains(parentName)) {
 			return;

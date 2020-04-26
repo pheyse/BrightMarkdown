@@ -142,6 +142,50 @@ public class BrightMarkdownTest {
 	}
 	
 	@Test
+	public void createHTML_nullInput() throws Exception{
+		String input = null;
+		String result = removeFormatting(new BrightMarkdown().createHTML(input));
+		String expected = "<html><body></body></html>";
+		log("input:\n" + input);
+		log("==========================");
+		log("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void createHTML_noTextOutputTypeEmbeddable() throws Exception{
+		String input = "";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input, OutputType.EMBEDDABLE_HTML_CODE));
+		String expected = "<span/>";
+		log("input:\n" + input);
+		log("==========================");
+		log("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void createHTML_nullInputOutputTypeEmbeddable() throws Exception{
+		String input = null;
+		String result = removeFormatting(new BrightMarkdown().createHTML(input, OutputType.EMBEDDABLE_HTML_CODE));
+		String expected = "<span/>";
+		log("input:\n" + input);
+		log("==========================");
+		log("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void createHTML_singleCharOutputTypeEmbeddable() throws Exception{
+		String input = "x";
+		String result = removeFormatting(new BrightMarkdown().createHTML(input, OutputType.EMBEDDABLE_HTML_CODE));
+		String expected = "<span><p>x</p></span>";
+		log("input:\n" + input);
+		log("==========================");
+		log("Result:\n" + result);
+		assertEquals(expected, result);
+	}
+	
+	@Test
 	public void createHTML_noMarkdown() throws Exception{
 		String input = "Simple Text";
 		String result = removeFormatting(new BrightMarkdown().createHTML(input));

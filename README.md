@@ -26,7 +26,7 @@ Created 2017-2019 by Philip Heyse
 		<dependency>
 			<groupId>de.bright-side.brightmarkdown</groupId>
 			<artifactId>brightmarkdown</artifactId>
-			<version>1.6.0</version>
+			<version>1.6.1</version>
 		</dependency>
 [...]
 ```
@@ -34,10 +34,12 @@ Created 2017-2019 by Philip Heyse
 ### Including via Gradle
 ```
 dependencies {
-    implementation 'de.bright-side.brightmarkdown:brightmarkdown:1.6.0'
+    implementation 'de.bright-side.brightmarkdown:brightmarkdown:1.6.1'
 }
 ```
 
+### Java 8 Legacy version
+For Java 8 please use version "1.6.1-legacy-java8"
 
 ### get documentation as HTML
 ```java
@@ -185,3 +187,5 @@ table.brightmarkdown tr:nth-child(even) {background-color: #ffffff;}
    - image name place holders
    - enhanced image tag: percentage size, border and default width, optional alternative text
    - testing: using JUnit 5, renamed test classes
+ - Version 1.6.1 (2020-04-26):
+   - bugfix for empty input and output type EMBEDDABLE_HTML_CODE
