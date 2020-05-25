@@ -361,7 +361,8 @@ public class BMSectionParserLogicTest {
 		BMSection section1 = BMUtil.addSection(expected, MDType.RAW_LINE, " - bullet two");
 		BMSection codeBlockSection = BMUtil.addSection(section1, MDType.CODE_BLOCK, "some source code");
 		codeBlockSection.setNested(true);
-		BMUtil.addSection(section1, MDType.RAW_LINE, " bullet two end");
+		BMSection section2 = BMUtil.addSection(section1, MDType.RAW_LINE, " bullet two end");
+		section2.setNested(true);
 		BMUtil.addSection(expected, MDType.RAW_LINE, "rest of the text");
 		
 		log("input:\n" + input);
@@ -382,10 +383,12 @@ public class BMSectionParserLogicTest {
 		BMSection section1 = BMUtil.addSection(expected, MDType.RAW_LINE, " - bullet two");
 		BMSection codeBlockSection = BMUtil.addSection(section1, MDType.CODE_BLOCK, "some source code");
 		codeBlockSection.setNested(true);
-		BMUtil.addSection(section1, MDType.RAW_LINE, " bullet two middle ");
+		BMSection section2 = BMUtil.addSection(section1, MDType.RAW_LINE, " bullet two middle ");
+		section2.setNested(true);
 		codeBlockSection = BMUtil.addSection(section1, MDType.CODE_BLOCK, "more source code");
 		codeBlockSection.setNested(true);
-		BMUtil.addSection(section1, MDType.RAW_LINE, " bullet two end");
+		BMSection section3 = BMUtil.addSection(section1, MDType.RAW_LINE, " bullet two end");
+		section3.setNested(true);
 		BMUtil.addSection(expected, MDType.RAW_LINE, "rest of the text");
 		
 		log("input:\n" + input);

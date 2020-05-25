@@ -19,7 +19,6 @@ import de.bright_side.brightmarkdown.model.BMSection.MDType;
 public class BMSectionParserLogic {
 	private BMTextParserLogic textParser = new BMTextParserLogic();
 	private List<Exception> warnings = new ArrayList<Exception>();
-	private static final Map<String, BMCodeFormat> CODE_FORMATS = new BMDefaultCodeFormatCreator().createCodeFormats();
 	private static String SIZE_UNIT_MM = "mm";
 	private static String SIZE_UNIT_PIXELS = "px";
 	private static String SIZE_UNIT_INCH = "in";
@@ -31,30 +30,29 @@ public class BMSectionParserLogic {
 //		log("parseAll: escapedMarkedown = >>\n" + escapedMarkedown + "<<");
 		BMUtil.logSection("parseAll: sections before parseCodeSections", section);
 		parseCodeSections(section);
-//		BMUtil.logSection("parseAll: sections after parseCodeSections", section);
+		BMUtil.logSection("parseAll: sections after parseCodeSections", section);
 		parseHorizontalRuleEntries(section);
 		parseTableOfContentEntries(section);
 
 		parseRawLineEntries(section, MDType.HEADING, BMConstants.HEADINGS_INDICATOR, true);
 		parseRawLineEntries(section, MDType.UNCHECKED_ITEM, BMConstants.UNCHECKED_ITEM_INDICATORS, false);
 		parseRawLineEntries(section, MDType.CHECKED_ITEM, BMConstants.CHECKED_ITEM_INDICATORS, false);
+		BMUtil.logSection("parseAll: sections before parseListEntriesByLevel", section);
 		parseListEntriesByLevel(section);
 		
-//		log("parseAll: sections before bullet point processing = >>\n" + BMUtil.toString(section) + "<<");
+		BMUtil.logSection("parseAll: sections before bullet point processing", section);
 		parseRawLineEntries(section, MDType.BULLET_POINT, BMConstants.BULLET_POINT_INDICATORS_A, true);
 		parseRawLineEntries(section, MDType.BULLET_POINT, BMConstants.BULLET_POINT_INDICATORS_B, true);
 		parseRawLineEntries(section, MDType.BULLET_POINT, BMConstants.BULLET_POINT_INDICATORS_C, true);
 		parseRawLineEntries(section, MDType.BULLET_POINT, BMConstants.BULLET_POINT_INDICATORS_D, true);
-//		log("parseAll: sections after bullet point processing = >>\n" + BMUtil.toString(section) + "<<");
+		BMUtil.logSection("parseAll: before numbered item processing", section);
 		parseRawLineEntries(section, MDType.NUMBERED_ITEM, BMConstants.NUMBERED_ITEM_INDICATORS, false);
-		BMUtil.logSection("before parseTableRows", section);
+		BMUtil.logSection("parseAll: before parseTableRows", section);
 		parseTableRows(section);
-		BMUtil.logSection("after parseTableRows, before parseTextParagraphs", section);
+		BMUtil.logSection("before parseTextParagraphs", section);
 		parseTextParagraphs(section);
-		BMUtil.logSection("after parseTextParagraphs, before parseLinks", section);
+		BMUtil.logSection("before parseLinks", section);
 		parseLinks(section);
-		BMUtil.logSection("after parseLinks", section);
-
 		BMUtil.logSection("before formatting", section);
 		parseFormatting(section);
 		BMUtil.logSection("after formatting", section);
@@ -183,7 +181,7 @@ public class BMSectionParserLogic {
 		for (int level = 1; level <= indicators.length; level ++){
 			String indicator = indicators[level - 1] + " ";
 			for (BMSection section: BMUtil.getAllSectionsAndSubSections(topSection)){
-				if ((section.getType() == MDType.RAW_LINE) && (section.getRawText() != null) && (section.getRawText().trim().startsWith(indicator))){
+				if ((section.getType() == MDType.RAW_LINE) && (section.isNested() == false) && (section.getRawText() != null) && (section.getRawText().trim().startsWith(indicator))){
 					trimAndRemoveRawTextStart(section, indicator.length());
 					section.setOriginalPlainText(removeFormatting(section.getRawText()));
 					section.setType(type);
@@ -255,9 +253,6 @@ public class BMSectionParserLogic {
 			if (section.getRawText() == null){
 				return;
 			}		
-//			if (section.getChildren() != null){
-//				throw new RuntimeException("Did not expect raw text and children in one section item! (Raw text = >>" + section.getRawText() + "<<");
-//			}
 			rest = section.getRawText();
 			
 			BMPosAndTag labelStart = textParser.findNext(rest, 0, BMConstants.LINK_AND_IMAGE_LABEL_START_TAGS);
@@ -269,8 +264,8 @@ public class BMSectionParserLogic {
 			BMPosAndTag labelEnd = null;
 			while (labelStart != null){
 				labelEnd = textParser.findNext(rest, labelStart.getPos() + labelStart.getTag().length(), BMConstants.LINK_LABEL_END_TAGS);
-				String labelText = rest.substring(labelStart.getPos() + labelStart.getTag().length(), labelEnd.getPos());
 				if (labelEnd != null) {
+					String labelText = rest.substring(labelStart.getPos() + labelStart.getTag().length(), labelEnd.getPos());
 //					String nextChar = textParser.readUntilLengthOrEnd(rest, labelEnd.getPos(), 1);
 //					boolean nextParenthesisStartRightAfterwards = (BMConstants.LINK_LOCATION_START_A.equals(nextChar)) || (BMConstants.LINK_LOCATION_START_B.equals(nextChar));
 					boolean isImageTag = labelStart.getTag().startsWith(BMConstants.IMAGE_LINK_PREFIX);
@@ -330,6 +325,9 @@ public class BMSectionParserLogic {
 							labelStart = null; //: end loop
 						}
 					}
+				} else {
+					rest = rest.substring(labelStart.getPos() + labelStart.getTag().length());
+					labelStart = textParser.findNext(rest, 0, BMConstants.LINK_AND_IMAGE_LABEL_START_TAGS);
 				}
 			}
 			if (rest.length() > 0){
@@ -446,7 +444,7 @@ public class BMSectionParserLogic {
 		Map<Integer, Integer> levelToIndentMap = new TreeMap<Integer, Integer>();
 		for (BMSection section: BMUtil.getAllSectionsAndSubSections(topSection)){
 			String rawText = section.getRawText();
-			if ((section.getType() == MDType.RAW_LINE) && (rawText != null)){
+			if ((section.getType() == MDType.RAW_LINE) && (section.isNested() == false) && (rawText != null)){
 				MDType type = MDType.BULLET_POINT;
 				Integer listItemLevelIndent = readListItemIndet(rawText, BMConstants.BULLET_POINT_INDICATORS_CHARS_LIST);
 				if (listItemLevelIndent == null) { //: could not find bullet point, try numbered item indicator
@@ -605,7 +603,7 @@ public class BMSectionParserLogic {
 		if (formatName == null) {
 			return null;
 		}
-		return CODE_FORMATS.get(formatName.toLowerCase());
+		return BMConstants.CODE_FORMATS.get(formatName.toLowerCase());
 	}
 
 	private BMCodeFormat readFormat_old(String rawText) {
@@ -613,20 +611,13 @@ public class BMSectionParserLogic {
 		if (formatName == null) {
 			return null;
 		}
-		return CODE_FORMATS.get(formatName.toLowerCase());
+		return BMConstants.CODE_FORMATS.get(formatName.toLowerCase());
 	}
 	
 	private String removeFormatting(String rawText) {
 		return rawText.replace("\\", "").replace("*", "").replace("_", "").replace("~", "");
 	}
 
-
-	private String toTrimmedNonNullString(String rawText) {
-		if (rawText == null){
-			return "";
-		}
-		return rawText.trim();
-	}
 
 	private String toNonNullString(String rawText, boolean trim) {
 		if (rawText == null){
@@ -643,7 +634,7 @@ public class BMSectionParserLogic {
 			return null;
 		}
 		
-		return textParser.readUntilCharOrEnd(rawText, 0, Arrays.asList(' ', '\n'));
+		return textParser.readUntilCharOrEnd(rawText, 0, Arrays.asList(' ', '\n')).toLowerCase();
 	}
 
 	private String readFormatName_old(String rawText) {
@@ -713,7 +704,7 @@ public class BMSectionParserLogic {
 		BMSection subSectionOfCurrentRow = null;
 		BMPosAndTag item = textParser.findNext(textWithoutCR, startPos, tags);
 		while (item != null) {
-//			log("toMDSection: item = " + item + ", startPos = " + startPos + ", subSectionOfCurrentRow = " + subSectionOfCurrentRow);
+			log("toMDSection: item = " + item + ", startPos = " + startPos + ", subSectionOfCurrentRow = " + subSectionOfCurrentRow);
 			String data = textWithoutCR.substring(startPos, item.getPos());
 			BMSection subSection = null;
 			subSection = new BMSection();
@@ -721,6 +712,7 @@ public class BMSectionParserLogic {
 			subSection.setRawText(data);
 			startPos = item.getPos() + item.getTag().length();
 			if (subSectionOfCurrentRow != null) {
+				subSection.setNested(true);
 				BMUtil.addChild(subSectionOfCurrentRow, subSection);
 			} else {
 				BMUtil.addChild(result, subSection);
@@ -773,7 +765,6 @@ public class BMSectionParserLogic {
 			} else {
 				subSectionOfCurrentRow = null;
 			}
-//			BMUtil.addChild(result, subSection);
 			
 			item = textParser.findNext(textWithoutCR, startPos, tags);
 		}

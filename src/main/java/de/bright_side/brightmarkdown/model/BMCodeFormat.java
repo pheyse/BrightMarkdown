@@ -7,6 +7,7 @@ public class BMCodeFormat {
 	private Set<String> stringIndicators; 
 	private String escapeCharacter; 
 	private Set<String> keywords;
+	private boolean keywordsIgnoreCase;
 	private String blockCommentStart;
 	private String blockCommentEnd;
 	private String lineCommentStart;
@@ -61,6 +62,11 @@ public class BMCodeFormat {
 	}
 	public void setTagEnds(Set<String> tagEnds) {
 		this.tagEnds = tagEnds;
+	}
+	public boolean isKeywordsIgnoreCase() {
+		return keywordsIgnoreCase;
+	}
+	public void setKeywordsIgnoreCase(boolean keywordsIgnoreCase) {
+		this.keywordsIgnoreCase = keywordsIgnoreCase;
 	} 
-
 }

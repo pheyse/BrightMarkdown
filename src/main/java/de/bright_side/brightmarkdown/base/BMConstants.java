@@ -2,6 +2,10 @@ package de.bright_side.brightmarkdown.base;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+
+import de.bright_side.brightmarkdown.logic.BMDefaultCodeFormatCreator;
+import de.bright_side.brightmarkdown.model.BMCodeFormat;
 
 public class BMConstants {
 	public static final boolean LOGGING_ACTIVE = false;
@@ -47,9 +51,16 @@ public class BMConstants {
 	public static final String LINE_BREAK = "\n";
 	public static final String TABLE_OF_CONTENT_MARKER = "{TOC}";
 	public static final String TABLE_CELL_SEPARATOR = "|";
-	public static final String CODE_BLOCK_MARK_A = "```";
-	public static final String CODE_BLOCK_MARK_B = "´´´";
-	public static final List<String> CODE_BLOCK_MARKS = Arrays.asList(CODE_BLOCK_MARK_A, CODE_BLOCK_MARK_B);
+	public static final String CODE_BLOCK_MARK_A_LONG = "```";
+	public static final String CODE_BLOCK_MARK_B_LONG = "´´´";
+	public static final String CODE_BLOCK_MARK_A_SHORT = "``";
+	public static final String CODE_BLOCK_MARK_B_SHORT = "´´";
+	public static final List<String> CODE_BLOCK_MARKS = Arrays.asList(CODE_BLOCK_MARK_A_LONG, CODE_BLOCK_MARK_B_LONG, CODE_BLOCK_MARK_A_SHORT, CODE_BLOCK_MARK_B_SHORT);
+	public static final String CODE_BLOCK_SPECIAL_FORMAT_SECTION_MARK = "!!!";
+	public static final String CODE_BLOCK_SPECIAL_FORMAT_ELIPSE = "...";
+	public static final String CODE_BLOCK_SPECIAL_FORMAT_HIGHLIGHT = "hl";
+	public static final String CODE_BLOCK_SPECIAL_FORMAT_PLACEHOLDER = "ph";
+	public static final String CODE_BLOCK_SPECIAL_FORMAT_INFO = "info";
 
 	public static final String NO_MARKDOWN_MARK = "{NOMARKDOWN}";
 	public static final String ESCAPE_NEW_LINE_IN_CODE_BLOCK = "%%N%%";
@@ -58,7 +69,18 @@ public class BMConstants {
 	public static final String IMAGE_WIDTH_LABEL = "width=";
 	public static final String IMAGE_HEIGHT_LABEL = "height=";
 	public static final String IMAGE_BORDER_LABEL = "border=";
+
+
+	public static final String CODE_BLOCK_HIGHLIGHT_BACKGROUND_COLOR = "#f7ea04";
+	public static final String CODE_BLOCK_HIGHLIGHT_FOREGROUND_COLOR = "black";
+	public static final String CODE_BLOCK_PLACEHOLDER_FOREGROUND_COLOR = "#0000ff";
+	public static final String CODE_BLOCK_SPECIAL_FORMAT_ELIPSE_FORGROUND_COLOR = "grey";
+	public static final String CODE_BLOCK_SPECIAL_FORMAT_ELIPSE_BACKGROUND_COLOR = "lightgreen";
+	public static final String CODE_BLOCK_INFO_FOREGROUND_COLOR = "#4b2eff";
+	public static final String CODE_BLOCK_INFO_BACKGROUND_COLOR = "#efefef";
 	
+	public static final Map<String, BMCodeFormat> CODE_FORMATS = new BMDefaultCodeFormatCreator().createCodeFormats();
+
 	
 	private static String[] createNumberedItemIndicatorList(int end) {
 		String[] result = new String[end + 1];

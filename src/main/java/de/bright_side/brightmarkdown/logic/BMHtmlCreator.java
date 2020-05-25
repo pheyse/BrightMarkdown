@@ -274,7 +274,7 @@ public class BMHtmlCreator {
 		for (BMSection section: relevantSections) {
 			log("createHTMLNodesForCodeBlock. Section = " + section + ", raw text = >>" + section.getRawText() + "<<");
 			BrightXmlNode itemNode = codeNode.appendNode("span", section.getRawText());
-			String style = getCodeBlockStyle(section.getType());
+			String style = getCodeBlockStyle(section);
 			if (style != null) {
 				itemNode.setAttribute("style", style);
 			}
@@ -297,8 +297,8 @@ public class BMHtmlCreator {
 		
 	}
 
-	private String getCodeBlockStyle(MDType type) {
-		switch (type) {
+	private String getCodeBlockStyle(BMSection section) {
+		switch (section.getType()) {
 		case CODE_BLOCK_COMMAND:
 			break;
 		case CODE_BLOCK_COMMENT:
@@ -309,10 +309,34 @@ public class BMHtmlCreator {
 			return "color:purple;font-weight:bold";
 		case CODE_BLOCK_STRING:
 			return "color:blue";
+		case FORMATTED_TEXT:
+			return getStyleForFormattedText(section);
 		default:
 			break;
 		}
 		return null;
+	}
+
+	private String getStyleForFormattedText(BMSection section) {
+		StringBuilder result = new StringBuilder();
+		
+		if (section.isBold()) {
+			result.append("font-weight: bold;");
+		}
+		if (section.isItalic()) {
+			result.append("font-style: italic;");
+		}
+		if (section.isUnderline()) {
+			result.append("text-decoration: underline;");
+		}
+		if (section.getBackgroundColor() != null) {
+			result.append("background-color: " + section.getBackgroundColor() + ";");
+		}
+		if (section.getColor() != null) {
+			result.append("color: " + section.getColor() + ";");
+		}
+		
+		return result.toString();
 	}
 
 	private void createHTMLNodesForTableOfContents(BrightXmlNode rootElement, BMSection topSection) {

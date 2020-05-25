@@ -3,6 +3,7 @@ package de.bright_side.brightmarkdown.logic;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import de.bright_side.brightmarkdown.base.BMConstants;
@@ -321,5 +322,330 @@ public class BMCodeParserTest {
 		assertEquals(MDType.CODE_BLOCK_COMMENT + ": " + "/*block" + BMConstants.ESCAPE_NEW_LINE_IN_CODE_BLOCK + "comment*/", toString(result, index ++));
 		assertEquals(MDType.CODE_BLOCK_COMMAND + ": " + BMConstants.ESCAPE_NEW_LINE_IN_CODE_BLOCK + "}" + BMConstants.ESCAPE_NEW_LINE_IN_CODE_BLOCK + "    a = b;", toString(result, index ++));
 	}
+
+	@Test
+	public void applySpecialFormat_highlight() {
+		BMSection section = new BMSection();
+		new BMCodeParser().applySpecialFormat(section, BMConstants.CODE_BLOCK_SPECIAL_FORMAT_HIGHLIGHT);
+		
+		assertEquals(true, section.isBold());
+		assertEquals(false, section.isItalic());
+		assertEquals(false, section.isUnderline());
+		assertEquals(null, section.getColor());
+		assertEquals(BMConstants.CODE_BLOCK_HIGHLIGHT_BACKGROUND_COLOR, section.getBackgroundColor());
+	}
+
+	@Test
+	public void applySpecialFormat_placeholder() {
+		BMSection section = new BMSection();
+		new BMCodeParser().applySpecialFormat(section, BMConstants.CODE_BLOCK_SPECIAL_FORMAT_PLACEHOLDER);
+		
+		assertEquals(true, section.isBold());
+		assertEquals(true, section.isItalic());
+		assertEquals(false, section.isUnderline());
+		assertEquals(BMConstants.CODE_BLOCK_PLACEHOLDER_FOREGROUND_COLOR, section.getColor());
+		assertEquals(null, section.getBackgroundColor());
+	}
+
+	@Test
+	public void applySpecialFormat_forground() {
+		BMSection section = new BMSection();
+		new BMCodeParser().applySpecialFormat(section, "c:green");
+		
+		assertEquals(false, section.isBold());
+		assertEquals(false, section.isItalic());
+		assertEquals(false, section.isUnderline());
+		assertEquals("green", section.getColor());
+		assertEquals(null, section.getBackgroundColor());
+	}
+
+	@Test
+	public void applySpecialFormat_background() {
+		BMSection section = new BMSection();
+		new BMCodeParser().applySpecialFormat(section, "bc:green");
+		
+		assertEquals(false, section.isBold());
+		assertEquals(false, section.isItalic());
+		assertEquals(false, section.isUnderline());
+		assertEquals(null, section.getColor());
+		assertEquals("green", section.getBackgroundColor());
+	}
+
+	@Test
+	public void applySpecialFormat_bold() {
+		BMSection section = new BMSection();
+		new BMCodeParser().applySpecialFormat(section, "b");
+		
+		assertEquals(true, section.isBold());
+		assertEquals(false, section.isItalic());
+		assertEquals(false, section.isUnderline());
+		assertEquals(null, section.getColor());
+		assertEquals(null, section.getBackgroundColor());
+	}
+
+	@Test
+	public void applySpecialFormat_italic() {
+		BMSection section = new BMSection();
+		new BMCodeParser().applySpecialFormat(section, "i");
+		
+		assertEquals(false, section.isBold());
+		assertEquals(true, section.isItalic());
+		assertEquals(false, section.isUnderline());
+		assertEquals(null, section.getColor());
+		assertEquals(null, section.getBackgroundColor());
+	}
+
+	@Test
+	public void applySpecialFormat_underline() {
+		BMSection section = new BMSection();
+		new BMCodeParser().applySpecialFormat(section, "u");
+		
+		assertEquals(false, section.isBold());
+		assertEquals(false, section.isItalic());
+		assertEquals(true, section.isUnderline());
+		assertEquals(null, section.getColor());
+		assertEquals(null, section.getBackgroundColor());
+	}
+
+	@Test
+	public void applySpecialFormat_combination() {
+		BMSection section = new BMSection();
+		new BMCodeParser().applySpecialFormat(section, "b u i c:blue bc:red");
+		
+		assertEquals(true, section.isBold());
+		assertEquals(true, section.isItalic());
+		assertEquals(true, section.isUnderline());
+		assertEquals("blue", section.getColor());
+		assertEquals("red", section.getBackgroundColor());
+	}
+
+	@Test
+	public void applySpecialFormat_combinationExtraSpaces() {
+		BMSection section = new BMSection();
+		new BMCodeParser().applySpecialFormat(section, " b   u i  c:blue bc:red ");
+		
+		assertEquals(true, section.isBold());
+		assertEquals(true, section.isItalic());
+		assertEquals(true, section.isUnderline());
+		assertEquals("blue", section.getColor());
+		assertEquals("red", section.getBackgroundColor());
+	}
+
+	@Test
+	public void applySpecialFormat_forgroundEmpty() {
+		BMSection section = new BMSection();
+		new BMCodeParser().applySpecialFormat(section, "c:");
+		
+		assertEquals(false, section.isBold());
+		assertEquals(false, section.isItalic());
+		assertEquals(false, section.isUnderline());
+		assertEquals(null, section.getColor());
+		assertEquals(null, section.getBackgroundColor());
+	}
+
+	@Test
+	public void applySpecialFormat_backgroundEmpty() {
+		BMSection section = new BMSection();
+		new BMCodeParser().applySpecialFormat(section, "bc:");
+		
+		assertEquals(false, section.isBold());
+		assertEquals(false, section.isItalic());
+		assertEquals(false, section.isUnderline());
+		assertEquals(null, section.getColor());
+		assertEquals(null, section.getBackgroundColor());
+	}
+	
+	@Test
+	public void processSpecialFormatSection_highlight() {
+		//: prepare
+		BMSection parent = new BMSection();
+		List<BMSection> sections = new ArrayList<BMSection>();
+		String text = "BlaBla!!!hl!hello!!!Bla";
+		int startPos = 6;
+		
+		//: action
+		int resultPos = new BMCodeParser().processSpecialFormatSection(parent, text, startPos, sections, BMConstants.ESCAPE_NEW_LINE_IN_CODE_BLOCK);
+		
+		//: check
+		assertEquals(20, resultPos);
+		assertEquals(1, sections.size());
+		BMSection section = sections.get(0);
+		assertEquals("hello", section.getRawText());
+		assertEquals(true, section.isBold());
+		assertEquals(false, section.isItalic());
+		assertEquals(false, section.isUnderline());
+		assertEquals(null, section.getColor());
+		assertEquals(BMConstants.CODE_BLOCK_HIGHLIGHT_BACKGROUND_COLOR, section.getBackgroundColor());
+		assertEquals(MDType.FORMATTED_TEXT, section.getType());
+	}
+	
+	@Test
+	public void processSpecialFormatSection_multipleItems() {
+		//: prepare
+		BMSection parent = new BMSection();
+		List<BMSection> sections = new ArrayList<BMSection>();
+		String text = "BlaBla!!!c:green b i!hello!!!Bla";
+		int startPos = 6;
+		
+		//: action
+		int resultPos = new BMCodeParser().processSpecialFormatSection(parent, text, startPos, sections, BMConstants.ESCAPE_NEW_LINE_IN_CODE_BLOCK);
+		
+		//: check
+		assertEquals(29, resultPos);
+		assertEquals(1, sections.size());
+		BMSection section = sections.get(0);
+		assertEquals("hello", section.getRawText());
+		assertEquals(true, section.isBold());
+		assertEquals(true, section.isItalic());
+		assertEquals(false, section.isUnderline());
+		assertEquals("green", section.getColor());
+		assertEquals(null, section.getBackgroundColor());
+		assertEquals(MDType.FORMATTED_TEXT, section.getType());
+	}
+	
+	@Test
+	public void processSpecialFormatSection_elipse() {
+		//: prepare
+		BMSection parent = new BMSection();
+		List<BMSection> sections = new ArrayList<BMSection>();
+		String text = "BlaBla!!!...Bla";
+		int startPos = 6;
+		
+		//: action
+		int resultPos = new BMCodeParser().processSpecialFormatSection(parent, text, startPos, sections, BMConstants.ESCAPE_NEW_LINE_IN_CODE_BLOCK);
+		
+		//: check
+		assertEquals(12, resultPos);
+		assertEquals(1, sections.size());
+		BMSection section = sections.get(0);
+		assertEquals("[...]", section.getRawText());
+		assertEquals(true, section.isBold());
+		assertEquals(true, section.isItalic());
+		assertEquals(false, section.isUnderline());
+		assertEquals(BMConstants.CODE_BLOCK_SPECIAL_FORMAT_ELIPSE_FORGROUND_COLOR, section.getColor());
+		assertEquals(BMConstants.CODE_BLOCK_SPECIAL_FORMAT_ELIPSE_BACKGROUND_COLOR, section.getBackgroundColor());
+		section.setBold(true);
+		section.setItalic(true);
+		
+		assertEquals(MDType.FORMATTED_TEXT, section.getType());
+		
+	}
+	
+	@Test
+	public void processSpecialFormatSection_escape4() {
+		//: prepare
+		BMSection parent = new BMSection();
+		List<BMSection> sections = new ArrayList<BMSection>();
+		String text = "BlaBla!!!\\!!!!Bla";
+		int startPos = 6;
+		
+		//: action
+		int resultPos = new BMCodeParser().processSpecialFormatSection(parent, text, startPos, sections, BMConstants.ESCAPE_NEW_LINE_IN_CODE_BLOCK);
+		
+		//: check
+		assertEquals(14, resultPos);
+		assertEquals(1, sections.size());
+		BMSection section = sections.get(0);
+		assertEquals("!!!!", section.getRawText());
+		assertEquals(false, section.isBold());
+		assertEquals(false, section.isItalic());
+		assertEquals(false, section.isUnderline());
+		assertEquals(null, section.getColor());
+		assertEquals(null, section.getBackgroundColor());
+		assertEquals(MDType.CODE_BLOCK_COMMAND, section.getType());
+		
+	}
+	
+	@Test
+	public void processSpecialFormatSection_escape3() {
+		//: prepare
+		BMSection parent = new BMSection();
+		List<BMSection> sections = new ArrayList<BMSection>();
+		String text = "BlaBla!!!\\!!!Bla";
+		int startPos = 6;
+		
+		//: action
+		int resultPos = new BMCodeParser().processSpecialFormatSection(parent, text, startPos, sections, BMConstants.ESCAPE_NEW_LINE_IN_CODE_BLOCK);
+		
+		//: check
+		assertEquals(13, resultPos);
+		assertEquals(1, sections.size());
+		BMSection section = sections.get(0);
+		assertEquals("!!!", section.getRawText());
+		assertEquals(false, section.isBold());
+		assertEquals(false, section.isItalic());
+		assertEquals(false, section.isUnderline());
+		assertEquals(null, section.getColor());
+		assertEquals(null, section.getBackgroundColor());
+		assertEquals(MDType.CODE_BLOCK_COMMAND, section.getType());
+		
+	}
+
+	@Test
+	public void processSpecialFormatSection_escape2() {
+		//: prepare
+		BMSection parent = new BMSection();
+		List<BMSection> sections = new ArrayList<BMSection>();
+		String text = "BlaBla!!!\\!!Bla";
+		int startPos = 6;
+		
+		//: action
+		int resultPos = new BMCodeParser().processSpecialFormatSection(parent, text, startPos, sections, BMConstants.ESCAPE_NEW_LINE_IN_CODE_BLOCK);
+		
+		//: check
+		assertEquals(12, resultPos);
+		assertEquals(1, sections.size());
+		BMSection section = sections.get(0);
+		assertEquals("!!", section.getRawText());
+		assertEquals(false, section.isBold());
+		assertEquals(false, section.isItalic());
+		assertEquals(false, section.isUnderline());
+		assertEquals(null, section.getColor());
+		assertEquals(null, section.getBackgroundColor());
+		assertEquals(MDType.CODE_BLOCK_COMMAND, section.getType());
+		
+	}
+	
+	@Test
+	public void processSpecialFormatSection_escape0() {
+		//: prepare
+		BMSection parent = new BMSection();
+		List<BMSection> sections = new ArrayList<BMSection>();
+		String text = "BlaBla!!!\\Bla";
+		int startPos = 6;
+		
+		//: action
+		int resultPos = new BMCodeParser().processSpecialFormatSection(parent, text, startPos, sections, BMConstants.ESCAPE_NEW_LINE_IN_CODE_BLOCK);
+		
+		//: check
+		assertEquals(10, resultPos);
+		assertEquals(0, sections.size());
+	}
+	
+	@Test
+	public void processSpecialFormatSection_broken() {
+		//: prepare
+		BMSection parent = new BMSection();
+		List<BMSection> sections = new ArrayList<BMSection>();
+		String text = "BlaBla!!!Bla";
+		int startPos = 6;
+		
+		//: action
+		int resultPos = new BMCodeParser().processSpecialFormatSection(parent, text, startPos, sections, BMConstants.ESCAPE_NEW_LINE_IN_CODE_BLOCK);
+		
+		//: check
+		assertEquals(9, resultPos);
+		assertEquals(1, sections.size());
+		BMSection section = sections.get(0);
+		assertEquals("!!!", section.getRawText());
+		assertEquals(false, section.isBold());
+		assertEquals(false, section.isItalic());
+		assertEquals(false, section.isUnderline());
+		assertEquals(null, section.getColor());
+		assertEquals(null, section.getBackgroundColor());
+		assertEquals(MDType.CODE_BLOCK_COMMAND, section.getType());
+		
+	}
+	
 	
 }

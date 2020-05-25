@@ -110,10 +110,6 @@ public class BMSection {
 	public void setBackgroundColor(String backgroundColor) {
 		this.backgroundColor = backgroundColor;
 	}
-	@Override
-	public String toString() {
-		return "BrightMarkdownSection [type: " + type + ", rawText = '" + rawText + "']";
-	}
 	public String getImageWidth() {
 		return imageWidth;
 	}
@@ -155,6 +151,10 @@ public class BMSection {
 	}
 	public void setImageBorder(String imageBorder) {
 		this.imageBorder = imageBorder;
+	}
+	@Override
+	public String toString() {
+		return "BMSection [type=" + type + ", rawText=" + rawText + ", nested=" + nested + ", level=" + level + ", multiLine=" + multiLine + "]";
 	}
 	
 }

@@ -57,7 +57,7 @@ public class BMDocumentationCreator {
 		add(sb, "* have a line that contains of 3 or more \\*\\*\\*");
 		add(sb, "* instead of \\* you can also use \\_, \\-, \\= or \\#");
 		add(sb, "");
-		add(sb, "## Tables:");
+		add(sb, "## Tables");
 		add(sb, "* use the \\| character to separate cells");
 		add(sb, "* place a few \\- chars underneath the first row to make it a header row");
 		add(sb, "* place \\{bg-color:_*value*_\\} or \\{bc:_*value*_\\} at the beginning of a row to set the row background or at the beginning of a cell to set the cell background");
@@ -66,8 +66,19 @@ public class BMDocumentationCreator {
 		add(sb, "* Place a \\\\ before a special character like \\* to escape it (ignore for processing)");
 		add(sb, "");
 		add(sb, "## Code blocks");
-		add(sb, "* Place a line of \\`\\`\\` or \\´\\´\\´ before and after the text to indicate a code block");
-		add(sb, "* write the format (java or xml) behind the indicator for syntax highlighting. Example \"\\`\\`\\`java\"");
+		add(sb, "* place a line of two or three \\` or \\´ before and after the text to indicate a code block");
+		add(sb, "* code blocks may also occur in a text paragraph or a bullet point item (and they even may have line breaks)");
+		add(sb, "* write the format (case is ignored) behind the indicator for syntax highlighting. Example \"\\`\\`java\"");
+		add(sb, "* these formats are available: xml, java, html, javascript (short: js), kotlin (short: kt), typeScript (short: ts), scala, sql");
+		add(sb, "");
+		add(sb, "## Special sections in code blocks");
+		add(sb, "* It is also possible to add special formatting sections within(!) code blocks to highlight passages, add additional information, indicate placeholders, etc.");
+		add(sb, "* Syntax: !!!{c:blue}_<format>_{c}!{c:blue}_<text>_{c}!!!. Example \\´\\´my code block !!!hl!highlighted text!!! more code\\´\\´");
+		add(sb, "* Formatting options: 'hl' to highlight text, 'ph' to indicate a placeholder, 'info' to indicate an info-text, 'c:_{c:blue}<color-name>{c}_' "
+				+ "or 'color:_{c:blue}<color-name>{c}_' for colors, 'bc:_{c:blue}<color>{c}_' or 'bg-color:_{c:blue}<color>{c}_' for background colors,"
+				+ " 'b' for bold, 'i' for italic and 'u' for underline");
+		add(sb, "* Elipse (='...'): write '!!!...'. Example: \\´\\´my code !!!... more code\\´\\´ ");
+		add(sb, "* Escaping '!!!': write '!!!\\' followed by the '!' you want to show. Example to show '!!!!': \\´\\´my code !!!\\!!!! more code\\´\\´");
 		add(sb, "");
 		add(sb, "## Table of contents");
 		add(sb, "* have a line with only the text \\{TOC}");

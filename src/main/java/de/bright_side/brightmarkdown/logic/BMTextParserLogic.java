@@ -1,29 +1,94 @@
 package de.bright_side.brightmarkdown.logic;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
 import de.bright_side.brightmarkdown.model.BMPosAndTag;
 
 public class BMTextParserLogic {
-
+	interface MatchConfirmer {
+		boolean confirmMatch(String text, int pos, String tag);
+	}
+	
 	public BMPosAndTag findNext(String text, int startPos, Collection<String> tags) {
+		return findNext(text, startPos, false, tags, null);
+	}
+	
+	public BMPosAndTag findNext(String text, int startPos, boolean ignoreCase, Collection<String> tags) {
+		return findNext(text, startPos, ignoreCase, tags, null);
+	}
+	
+	/**
+	 * 
+	 * @return BMPosAndTag containing first matching tag and its position or null if there are no matching tags
+	 */
+	public BMPosAndTag findNext(String text, int startPos, boolean ignoreCase, Collection<String> tags, MatchConfirmer matchConfirmer) {
 		BMPosAndTag result = null;
+		String useText = applyIgnoreCase(text, ignoreCase);
 		for (String i: tags) {
-			int pos = text.indexOf(i, startPos);
-			if (pos >= 0) {
+//			boolean matchConfirmerDeclined = false;
+			String searchItem;
+			if (ignoreCase) {
+				searchItem = i.toUpperCase();
+			} else {
+				searchItem = i;
+			}
+			int pos = useText.indexOf(searchItem, startPos);
+			while (pos >= 0){
+				boolean match = false;
 				if ((result == null) || (pos < result.getPos())) {
-					result = new BMPosAndTag();
-					result.setPos(pos);
-					result.setTag(i);
+					match = true;
 				} else if ((pos == result.getPos()) && (result.getTag().length() < i.length())) { //: check if match with longer tag
+					match = true;
+				} else {
+					pos = -1; // set to < 0 to end the loop
+				}
+				
+				if ((match) && (matchConfirmer != null)) {
+					match = matchConfirmer.confirmMatch(text, pos, i);
+					if (!match) {
+						//: the matchConfirmer declined. Find next potential match
+//						matchConfirmerDeclined = true;
+						pos = useText.indexOf(searchItem, pos + 1);
+					}
+				}
+				
+				if (match) {
 					result = new BMPosAndTag();
 					result.setPos(pos);
 					result.setTag(i);
+					pos = -1; // set to < 0 to end the loop
 				}
+				
 			}
 		}
 		return result;
+	}
+	
+	public char getCharBeforeOrDefault(String string, int pos, char defaultChar) {
+		if ((pos <= 0) || (pos >= string.length())) {
+			return defaultChar;
+		}
+		return string.charAt(pos - 1);
+	}
+	
+	public char getCharAfterOrDefault(String string, int pos, char defaultChar) {
+		if ((pos + 1 < 0) || (pos + 1 >= string.length())) {
+			return defaultChar;
+		}
+		return string.charAt(pos + 1);
+	}
+	
+	private String applyIgnoreCase(String string, boolean ignoreCase) {
+		if (!ignoreCase) {
+			return string;
+		}
+		return string.toUpperCase();
+	}
+	
+	public BMPosAndTag findNext(String text, int startPos, String ... tags) {
+		return findNext(text, startPos, Arrays.asList(tags));
 	}
 	
 	protected int findPosAfterLeadindSpaces(String rawText, int startPos) {
@@ -134,5 +199,30 @@ public class BMTextParserLogic {
 		
 		return rawText.substring(startPos, startPos + length);
 	}
+
+	/**
+	 * 
+	 * @param rawText
+	 * @param startPos
+	 * @param charToSkip
+	 * @return position where the next char is different than charToSkip
+	 */
+	protected int posAfterCharOccurences(String rawText, int startPos, char charToSkip) {
+		int result = 0;
+		int start = startPos;
+		if (rawText.length() <= start){
+			return start;
+		}
+		result = start;
+		for (char i: rawText.substring(start).toCharArray()){
+			if (i == charToSkip){
+				result ++;
+			} else {
+				return result;
+			}
+		}
+		return result;
+	}
+
 
 }

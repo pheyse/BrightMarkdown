@@ -7,7 +7,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.bright-side.brightmarkdown</groupId>
 	<artifactId>brightmarkdown</artifactId>
-	<version>1.6.1-legacy-java8</version>
+	<version>1.7.0-legacy-java8</version>
 	<name>BrightMarkdown</name>
 	<description>A Markdown library for Java</description>
 

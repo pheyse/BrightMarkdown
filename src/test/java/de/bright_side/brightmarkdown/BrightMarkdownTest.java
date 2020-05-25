@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import de.bright_side.brightmarkdown.BrightMarkdown.FormattingItem;
 import de.bright_side.brightmarkdown.BrightMarkdown.OutputType;
+import de.bright_side.brightmarkdown.base.BMConstants;
 import de.bright_side.brightmarkdown.base.BMUtil;
 import de.bright_side.brightmarkdown.base.TestingConstants;
 import de.bright_side.brightmarkdown.base.TestingUtil;
@@ -29,7 +30,44 @@ public class BrightMarkdownTest {
 
 	private String removeFormatting(String htmlString) {
 		return htmlString.replace("\r", "").replace("\n", "").replace("    ", "");
-	}	
+	}
+	
+	private String processAndProvideDebugInfo(StringBuilder input, String testName, OutputType outputType) throws Exception {
+		return processAndProvideDebugInfo(new BrightMarkdown(), input.toString(), testName, outputType);
+	}
+	
+	private String processAndProvideDebugInfo(String input, String testName, OutputType outputType) throws Exception {
+		return processAndProvideDebugInfo(new BrightMarkdown(), input, testName, outputType);
+	}
+	
+	private String processAndProvideDebugInfo(BrightMarkdown brightMarkdown, String input, String testName, OutputType outputType) throws Exception {
+		String logPrefix = "["+ testName + "] ";
+		
+		log(logPrefix + "input:\n" + input);
+		
+		BMSection processingStepResult = new BMSectionParserLogic().toMDSection(input);
+		new BMSectionParserLogic().parseCodeSections(processingStepResult);
+		log(logPrefix + "==========================");
+		log(logPrefix + "processingStepResult:\n" + BMUtil.toString(processingStepResult));
+		log(logPrefix + "==========================");
+		
+		BMSection sections = new BMSectionParserLogic().parseAll(input);
+		log(logPrefix + "==========================");
+		log(logPrefix + "parseAll sections:\n" + BMUtil.toString(sections));
+		log(logPrefix + "==========================");
+		
+		String resultRaw = brightMarkdown.createHTML(input, outputType);
+		String result = removeFormatting(resultRaw);
+		
+		log(logPrefix + "==========================");
+		log(logPrefix + "resultRaw:\n" + resultRaw);
+		log(logPrefix + "==========================");
+		log(logPrefix + "Result:\n" + result);
+		
+		
+		TestingUtil.writeDebugFileAndResources(testName, resultRaw);
+		return result;
+	}
 
 	@Test
 	public void getDocumentationAsHTML_normal() throws Exception{
@@ -524,7 +562,7 @@ public class BrightMarkdownTest {
 		sb.append("```\n");
 		String headingText = sb.toString();
 		sb = new StringBuilder();
-		sb.append("                                 Apache License\n");
+		sb.append("                                Apache License\n");
 		sb.append("                           Version 2.0, January 2004\n");
 		sb.append("                        http://www.apache.org/licenses/\n");
 		sb.append("   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n");
@@ -727,7 +765,7 @@ public class BrightMarkdownTest {
 		sb.append("```\n");
 		String headingText = sb.toString();
 		sb = new StringBuilder();
-		sb.append("                                 Apache License\n");
+		sb.append("                                Apache License\n");
 		sb.append("                           Version 2.0, January 2004\n");
 		String codeBlockText = sb.toString();
 		sb = new StringBuilder();
@@ -1852,15 +1890,33 @@ public class BrightMarkdownTest {
 	
 	@Test
 	public void createHTML_codeBlockJava() throws Exception{
-		String input = "Title\n - bullet 1\n - bullet two\nmore text\n```java\nif (x == 4) {\n    //commented out\n    int y = \"hi!\";\n    /*block\n    comment*/\n}\n\na = b;\n```\nrest of the text";
-		String resultWithFormatting = new BrightMarkdown().createHTML(input);
-		String result = removeFormatting(new BrightMarkdown().createHTML(input));
-		String expected = "<html><body><p>Title</p><ul><li>bullet 1</li><li>bullet two</li></ul><p>more text</p><pre style=\"" + BMHtmlCreator.CODE_BOX_STYLE + "\"><code><span><br/></span><span style=\"color:purple;font-weight:bold\">if</span><span> (x == 4) {<br/></span><span style=\"color:darkgreen\">//commented out</span><span><br/></span><span style=\"color:purple;font-weight:bold\">int</span><span> y = </span><span style=\"color:blue\">\"hi!\"</span><span>;<br/></span><span style=\"color:darkgreen\">/*block<br/>comment*/</span><span><br/>}<br/><br/>a = b;</span></code></pre><p>rest of the text</p></body></html>";
-		log("input:\n" + input);
-		log("==========================");
-		log("Result:\n" + result);
-		log("==========================");
-		log("Result with formatting:\n>>\n" + resultWithFormatting + "\n<<");
+		StringBuilder sb = new StringBuilder();
+		sb.append("Title\n");
+		sb.append(" - bullet 1\n");
+		sb.append(" - bullet two\n");
+		sb.append("more text\n");
+		sb.append("```java\n");
+		sb.append("if (x == 4) {\n");
+		sb.append("    //commented out\n");
+		sb.append("    int y = \"hi!\";\n");
+		sb.append("    /*block\n");
+		sb.append("    comment*/\n");
+		sb.append("}");
+		sb.append("\n");
+		sb.append("\n");
+		sb.append("a = b;\n");
+		sb.append("```\n");
+		sb.append("rest of the text");
+		
+		String testName = "createHTML_codeBlockJava";
+		String result = processAndProvideDebugInfo(sb, testName, OutputType.FULL_HTML_DOCUMENT);
+		
+		String expected = "<html><body><p>Title</p><ul><li>bullet 1</li><li>bullet two</li></ul><p>more text</p><pre style=\"" 
+		+ BMHtmlCreator.CODE_BOX_STYLE + "\"><code><span><br/></span><span style=\"color:purple;font-weight:bold\">if</span>"
+				+ "<span> (x == 4) {<br/></span><span style=\"color:darkgreen\">//commented out</span><span><br/></span>"
+				+ "<span style=\"color:purple;font-weight:bold\">int</span><span> y = </span><span style=\"color:blue\">\"hi!\"</span>"
+				+ "<span>;<br/></span><span style=\"color:darkgreen\">/*block<br/>comment*/</span><span><br/>}<br/>"
+				+ "<br/>a = b;</span></code></pre><p>rest of the text</p></body></html>";
 		assertEquals(expected, result);
 	}
 
@@ -1879,6 +1935,194 @@ public class BrightMarkdownTest {
 		log("Result with formatting:\n>>\n" + resultWithFormatting + "\n<<");
 		assertEquals(expected, result);
 	}
+
+	@Test
+	public void createHTML_codeBlockSql() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("# Title\n");
+		sb.append("- bullet 1\n");
+		sb.append("- bullet 2\n");
+		sb.append("´´´sql\n");
+		sb.append("-- inserts\n");
+		sb.append("insert into mytable(key, value) values (17, 'MyValue');\n");
+		sb.append("INSERT INTO mytable(key, value) VALUES (18, 'MyOtherValue');\n");
+		sb.append("/* some more \n");
+		sb.append("documentation */\n");
+		sb.append("´´´\n");
+		sb.append("more text...\n");
+
+		String input = sb.toString();
+
+		String testName = "createHTML_codeBlockSql";
+
+		String result = processAndProvideDebugInfo(input, testName, OutputType.EMBEDDABLE_HTML_CODE);
+		
+		String expected = "<span><h1>Title</h1><ul><li>bullet 1</li><li>bullet 2</li></ul><pre style=\"background:lightgrey\"><code>"
+				+ "<span><br/></span><span style=\"color:darkgreen\">-- inserts</span><span><br/></span>"
+				+ "<span style=\"color:purple;font-weight:bold\">insert</span><span> </span>"
+				+ "<span style=\"color:purple;font-weight:bold\">into</span><span> mytable(</span>"
+				+ "<span style=\"color:purple;font-weight:bold\">key</span><span>, value) </span>"
+				+ "<span style=\"color:purple;font-weight:bold\">values</span><span> (17, </span>"
+				+ "<span style=\"color:blue\">'MyValue'</span><span>);<br/></span>"
+				+ "<span style=\"color:purple;font-weight:bold\">INSERT</span><span> </span>"
+				+ "<span style=\"color:purple;font-weight:bold\">INTO</span><span> mytable(</span>"
+				+ "<span style=\"color:purple;font-weight:bold\">key</span><span>, value) </span>"
+				+ "<span style=\"color:purple;font-weight:bold\">VALUES</span><span> (18, </span>"
+				+ "<span style=\"color:blue\">'MyOtherValue'</span><span>);<br/></span>"
+				+ "<span style=\"color:darkgreen\">/* some more <br/>documentation */</span>"
+				+ "</code></pre><p>more text...</p></span>";
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void createHTML_codeBlockSqlTwoBackticks() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("# Title\n");
+		sb.append("- bullet 1\n");
+		sb.append("- bullet 2\n");
+		sb.append("´´sql\n");
+		sb.append("-- inserts\n");
+		sb.append("insert into mytable(key, value) values (17, 'MyValue');\n");
+		sb.append("INSERT INTO mytable(key, value) VALUES (18, 'MyOtherValue');\n");
+		sb.append("/* some more \n");
+		sb.append("documentation */\n");
+		sb.append("´´\n");
+		sb.append("more text...\n");
+
+		String input = sb.toString();
+
+		String testName = "createHTML_codeBlockSql";
+
+		String result = processAndProvideDebugInfo(input, testName, OutputType.EMBEDDABLE_HTML_CODE);
+		
+		String expected = "<span><h1>Title</h1><ul><li>bullet 1</li><li>bullet 2</li></ul><pre style=\"background:lightgrey\"><code>"
+				+ "<span><br/></span><span style=\"color:darkgreen\">-- inserts</span><span><br/></span>"
+				+ "<span style=\"color:purple;font-weight:bold\">insert</span><span> </span>"
+				+ "<span style=\"color:purple;font-weight:bold\">into</span><span> mytable(</span>"
+				+ "<span style=\"color:purple;font-weight:bold\">key</span><span>, value) </span>"
+				+ "<span style=\"color:purple;font-weight:bold\">values</span><span> (17, </span>"
+				+ "<span style=\"color:blue\">'MyValue'</span><span>);<br/></span>"
+				+ "<span style=\"color:purple;font-weight:bold\">INSERT</span><span> </span>"
+				+ "<span style=\"color:purple;font-weight:bold\">INTO</span><span> mytable(</span>"
+				+ "<span style=\"color:purple;font-weight:bold\">key</span><span>, value) </span>"
+				+ "<span style=\"color:purple;font-weight:bold\">VALUES</span><span> (18, </span>"
+				+ "<span style=\"color:blue\">'MyOtherValue'</span><span>);<br/></span>"
+				+ "<span style=\"color:darkgreen\">/* some more <br/>documentation */</span>"
+				+ "</code></pre><p>more text...</p></span>";
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void createHTML_codeBlockJavaWithSpecialSectionInStringAndComment() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("# Title\n");
+		sb.append("- bullet 1\n");
+		sb.append("- bullet 2\n");
+		sb.append("´´´java\n");
+		sb.append("// Main Block: calling !!!hl!myMethod!!!:\n");
+		sb.append("\n");
+		sb.append("/* using the parameter\n");
+		sb.append("   !!!ph hl!<user-name>!!! in a string\n");
+		sb.append("*/\n");
+		sb.append("result = myMethod(\"username:!!!ph hl!<user-name>!!!, token: 123\");\n");
+		sb.append("return result;\n");
+		sb.append("´´´\n");
+		sb.append("more text...\n");
+
+		String input = sb.toString();
+
+		String testName = "createHTML_codeBlockJavaWithSpecialSectionInStringAndComment";
+
+		String result = processAndProvideDebugInfo(input, testName, OutputType.EMBEDDABLE_HTML_CODE);
+		
+		String expected = "<span><h1>Title</h1><ul><li>bullet 1</li><li>bullet 2</li></ul>"
+				+ "<pre style=\"background:lightgrey\"><code><span><br/></span>"
+				+ "<span style=\"color:darkgreen\">// Main Block: calling </span>"
+				+ "<span style=\"font-weight: bold;background-color: #f7ea04;\">myMethod</span>"
+				+ "<span style=\"color:darkgreen\">:</span><span><br/><br/></span>"
+				+ "<span style=\"color:darkgreen\">/* using the parameter<br/>   </span>"
+				+ "<span style=\"font-weight: bold;font-style: italic;background-color: #f7ea04;color: #0000ff;\">&lt;user-name&gt;</span>"
+				+ "<span style=\"color:darkgreen\"> in a string<br/>*/</span><span><br/>result = myMethod(</span>"
+				+ "<span style=\"color:blue\">\"username:</span>"
+				+ "<span style=\"font-weight: bold;font-style: italic;background-color: #f7ea04;color: #0000ff;\">&lt;user-name&gt;</span>"
+				+ "<span style=\"color:blue\">, token: 123\"</span><span>);<br/></span><span style=\"color:purple;font-weight:bold\">return</span>"
+				+ "<span> result;</span></code></pre><p>more text...</p></span>";
+		assertEquals(expected, result);
+	}
+
+
+
+	
+	@Test
+	public void createHTML_codeBlockJavaScript() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("# Title\n");
+		sb.append("- bullet 1\n");
+		sb.append("- bullet 2\n");
+		sb.append("´´´js\n");
+		sb.append("// fetch exampmle:\n");
+		sb.append("let myVal = 99;\n");
+		sb.append("const myFunc = function(){\n");
+		sb.append("   fetch(\"http://localhost:8080/api/contacts\", {\n");
+		sb.append("      method: \"POST\",\n");
+		sb.append("      headers: {\n");
+		sb.append("         \"content-type\": \"application/json\"\n");
+		sb.append("      },\n");
+		sb.append("      body: JSON.stringify(contact),\n");
+		sb.append("   }).then(response => resonse.json());\n");
+		sb.append("}\n");
+		sb.append("/* some more \n");
+		sb.append("documentation */\n");
+		sb.append("´´´\n");
+		sb.append("more text...\n");
+		
+		String input = sb.toString();
+		
+		String testName = "createHTML_codeBlockJavaScript";
+		
+		String result = processAndProvideDebugInfo(input, testName, OutputType.EMBEDDABLE_HTML_CODE);
+		
+		String expected = "<span><h1>Title</h1><ul><li>bullet 1</li><li>bullet 2</li></ul>"
+				+ "<pre style=\"background:lightgrey\"><code><span><br/></span>"
+				+ "<span style=\"color:darkgreen\">// fetch exampmle:</span><span><br/></span>"
+				+ "<span style=\"color:purple;font-weight:bold\">let</span><span> myVal = 99;<br/>"
+				+ "</span><span style=\"color:purple;font-weight:bold\">const</span><span> myFunc = </span>"
+				+ "<span style=\"color:purple;font-weight:bold\">function</span><span>(){<br/>   fetch(</span>"
+				+ "<span style=\"color:blue\">\"http://localhost:8080/api/contacts\"</span><span>, {<br/>  method: </span>"
+				+ "<span style=\"color:blue\">\"POST\"</span><span>,<br/>  headers: {<br/> </span>"
+				+ "<span style=\"color:blue\">\"content-type\"</span><span>: </span>"
+				+ "<span style=\"color:blue\">\"application/json\"</span>"
+				+ "<span><br/>  },<br/>  body: JSON.stringify(contact),<br/>   }).then(response =&gt; resonse.json());<br/>}<br/>"
+				+ "</span><span style=\"color:darkgreen\">/* some more <br/>documentation */</span></code></pre>"
+				+ "<p>more text...</p></span>";
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void createHTML_codeBlockDoNotOverdetectKeywords() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("# Title\n");
+		sb.append("´´´java\n");
+		sb.append("int hint = 1;\n");
+		sb.append("int internet = 2;\n");
+		sb.append("int printer = 3;\n");
+		sb.append("´´´\n");
+		sb.append("more text...\n");
+
+		String input = sb.toString();
+
+		String testName = "createHTML_codeBlockDoNotOverdetectKeywords";
+
+		String result = processAndProvideDebugInfo(input, testName, OutputType.EMBEDDABLE_HTML_CODE);
+		
+		String expected = "<span><h1>Title</h1><pre style=\"background:lightgrey\"><code><span><br/></span>"
+				+ "<span style=\"color:purple;font-weight:bold\">int</span><span> hint = 1;<br/></span>"
+				+ "<span style=\"color:purple;font-weight:bold\">int</span><span> internet = 2;<br/></span>"
+				+ "<span style=\"color:purple;font-weight:bold\">int</span><span> printer = 3;</span></code>"
+				+ "</pre><p>more text...</p></span>";
+		assertEquals(expected, result);
+	}
+
 
 	@Test
 	public void createHTML_table_rowBackground() throws Exception{
@@ -2081,8 +2325,6 @@ public class BrightMarkdownTest {
 	
 	@Test
 	public void createHTML_bulletPointListWithEmbeddedCodeBlockSimple() throws Exception {
-		BrightMarkdown brightMarkdown = new BrightMarkdown();
-
 		StringBuilder sb = new StringBuilder();
 		sb.append("Hello\n");
 		sb.append(" - item *one*\n");
@@ -2095,32 +2337,14 @@ public class BrightMarkdownTest {
 		sb.append("```\n");
 		sb.append(" - item three\n");
 		sb.append("More text...\n");
-		String input = sb.toString();
-		log("input:\n" + input);
-		
-		BMSection processingStepResult = new BMSectionParserLogic().toMDSection(input);
-		new BMSectionParserLogic().parseCodeSections(processingStepResult);
-		log("==========================");
-		log("processingStepResult:\n" + BMUtil.toString(processingStepResult));
-		log("==========================");
 
-		
-		BMSection sections = new BMSectionParserLogic().parseAll(input);
-		log("==========================");
-		log("parseAll sections:\n" + BMUtil.toString(sections));
-		log("==========================");
+		String testName = "createHTML_higlightedTextInSingleLineCodeBlock";
 
-		String resultRaw = brightMarkdown.createHTML(input);
-		String result = removeFormatting(resultRaw);
-		
-		log("==========================");
-		log("resultRaw:\n" + resultRaw);
-		log("==========================");
-		log("Result:\n" + result);
-		String expected = "<html><body><p>Hello</p><ul><li><span>item </span><b>one</b></li><ul><li>item one-a</li></ul><li>"
-				+ "<i>item two</i></li><ul><li>items two-a</li><li><span>x</span><pre style=\"" + BMHtmlCreator.CODE_BOX_STYLE + "\"><code><span>"
-				+ "<br/>some code<br/>some more code</span></code></pre></li></ul><li>item three</li></ul><p>More text...</p>"
-				+ "</body></html>";
+		String result = processAndProvideDebugInfo(sb, testName, OutputType.FULL_HTML_DOCUMENT);
+
+		String expected = "<html><body><p>Hello</p><ul><li><span>item </span><b>one</b></li><ul><li>item one-a</li></ul><li><i>item two</i></li>"
+				+ "<ul><li>items two-a</li><li><span>x</span><pre style=\"background:lightgrey\"><code><span><br/></span>"
+				+ "<span>some code<br/>some more code</span></code></pre></li></ul><li>item three</li></ul><p>More text...</p></body></html>";
 		assertEquals(expected, result);
 	}
 	
@@ -2991,5 +3215,217 @@ public class BrightMarkdownTest {
 		assertEquals(expected, result);
 	}
 	
+	@Test
+	public void createHTML_higlightedTextInCodeBlock() throws Exception {
+		BrightMarkdown brightMarkdown = new BrightMarkdown();
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append("# Chapter\n");
+		sb.append("```java\n");
+		sb.append("int x = 2;\n");
+		sb.append("int y = processData(x, !!!hl!true!!!);\n");
+		sb.append("return y;```\n");
+		sb.append("More text...\n");
+		String input = sb.toString();
+		
+		String testName = "createHTML_higlightedTextInCodeBlock";
+
+		String result = processAndProvideDebugInfo(brightMarkdown, input, testName, OutputType.EMBEDDABLE_HTML_CODE);
+		
+		String expected = "<span><h1>Chapter</h1><pre style=\"background:lightgrey\"><code><span><br/></span><span style=\"color:purple;font-weight:bold\">int"
+				+ "</span><span> x = 2;<br/></span><span style=\"color:purple;font-weight:bold\">int</span><span> y = processData(x, </span>"
+				+ "<span style=\"font-weight: bold;background-color: #f7ea04;\">true</span><span>);<br/></span><span style=\"color:purple;font-weight:bold\">return</span>"
+				+ "<span> y;</span></code></pre><p>More text...</p></span>";
+		assertEquals(expected, result);
+	}
 	
+	@Test
+	public void createHTML_placeholderTextInCodeBlock() throws Exception {
+		BrightMarkdown brightMarkdown = new BrightMarkdown();
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append("# Chapter\n");
+		sb.append("```\n");
+		sb.append("send -m 'hello' -t '!!!ph!<token>!!!'\n");
+		String input = sb.toString();
+		
+		String testName = "createHTML_placeholderTextInCodeBlock";
+		
+		String result = processAndProvideDebugInfo(brightMarkdown, input, testName, OutputType.EMBEDDABLE_HTML_CODE);
+		
+		String expected = "<span><h1>Chapter</h1><pre style=\"background:lightgrey\"><code><span><br/></span>"
+				+ "<span>send -m 'hello' -t '</span><span style=\"font-weight: bold;font-style: italic;color: " 
+				+ BMConstants.CODE_BLOCK_PLACEHOLDER_FOREGROUND_COLOR + ";\">&lt;token&gt;</span><span>'</span></code></pre></span>";
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void createHTML_infoTextInCodeBlock() throws Exception {
+		BrightMarkdown brightMarkdown = new BrightMarkdown();
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append("# Chapter\n");
+		sb.append("```java\n");
+		sb.append("int x = myMethod(1000!!!info!=duration in millis!!!, true);\n");
+		sb.append("return x;\n");
+		sb.append("´´´\n");
+		String input = sb.toString();
+		
+		String testName = "createHTML_infoTextInCodeBlock";
+		
+		String result = processAndProvideDebugInfo(brightMarkdown, input, testName, OutputType.EMBEDDABLE_HTML_CODE);
+		
+		String expected = "<span><h1>Chapter</h1><pre style=\"background:lightgrey\"><code><span><br/></span>"
+				+ "<span style=\"color:purple;font-weight:bold\">int</span><span> x = myMethod(1000</span>"
+				+ "<span style=\"font-style: italic;background-color: #efefef;color: #4b2eff;\">=duration in millis</span>"
+				+ "<span>, </span><span style=\"color:purple;font-weight:bold\">true</span><span>);<br/></span>"
+				+ "<span style=\"color:purple;font-weight:bold\">return</span><span> x;</span></code></pre></span>";
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void createHTML_elipse() throws Exception {
+		BrightMarkdown brightMarkdown = new BrightMarkdown();
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append("# Chapter\n");
+		sb.append("```java\n");
+		sb.append("//init\n");
+		sb.append("import x.y.z;\n");
+		sb.append("!!!...\n");
+		sb.append("\n");
+		sb.append("int y = processData(x);\n");
+		sb.append("return y;```\n");
+		sb.append("More text...\n");
+		String input = sb.toString();
+		
+		String testName = "createHTML_elipse";
+		
+		String result = processAndProvideDebugInfo(brightMarkdown, input, testName, OutputType.EMBEDDABLE_HTML_CODE);
+		
+		String expected = "<span><h1>Chapter</h1><pre style=\"background:lightgrey\"><code><span><br/></span><span style=\"color:darkgreen\">//init</span>"
+				+ "<span><br/></span><span style=\"color:purple;font-weight:bold\">import</span><span> x.y.z;<br/></span>"
+				+ "<span style=\"font-weight: bold;font-style: italic;background-color: lightgreen;color: grey;\">[...]</span><span><br/><br/>"
+				+ "</span><span style=\"color:purple;font-weight:bold\">int</span><span> y = processData(x);<br/></span>"
+				+ "<span style=\"color:purple;font-weight:bold\">return</span><span> y;</span></code></pre><p>More text...</p></span>";
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void createHTML_escapeExclamationMarksInCodeBlock() throws Exception {
+		BrightMarkdown brightMarkdown = new BrightMarkdown();
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append("# Chapter\n");
+		sb.append("```\n");
+		sb.append("info: A test!!!\\!!!!\n");
+		sb.append("do xyz```\n");
+		sb.append("More text...\n");
+		String input = sb.toString();
+		
+		String testName = "createHTML_escapeExclamationMarksInCodeBlock";
+		
+		String result = processAndProvideDebugInfo(brightMarkdown, input, testName, OutputType.EMBEDDABLE_HTML_CODE);
+		
+		String expected = "<span><h1>Chapter</h1><pre style=\"background:lightgrey\"><code><span><br/></span><span>info: A test</span>"
+				+ "<span>!!!!</span><span><br/>do xyz</span></code></pre><p>More text...</p></span>";
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void createHTML_specialFormattingInCodeBlock() throws Exception {
+		BrightMarkdown brightMarkdown = new BrightMarkdown();
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append("# Chapter\n");
+		sb.append("```java\n");
+		sb.append("String x = !!!b i bc:pink u c:blue!theSpecialMethod()!!!;\n");
+		sb.append("return x;```\n");
+		sb.append("More text...\n");
+		String input = sb.toString();
+		
+		String testName = "createHTML_specialFormattingInCodeBlock";
+		
+		String result = processAndProvideDebugInfo(brightMarkdown, input, testName, OutputType.EMBEDDABLE_HTML_CODE);
+		
+		String expected = "<span><h1>Chapter</h1><pre style=\"background:lightgrey\"><code><span><br/></span>"
+				+ "<span>String x = </span><span style=\"font-weight: bold;font-style: italic;text-decoration: underline;background-color: pink;color: blue;\">"
+				+ "theSpecialMethod()</span><span>;<br/></span><span style=\"color:purple;font-weight:bold\">return</span>"
+				+ "<span> x;</span></code></pre><p>More text...</p></span>";
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void createHTML_higlightedTextInSingleLineCodeBlock() throws Exception {
+		BrightMarkdown brightMarkdown = new BrightMarkdown();
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append("# Chapter\n");
+		sb.append(" - one\n");
+		sb.append(" - use method call ```java processData(x, !!!hl!true!!!);´´´\n");
+		sb.append("More text...\n");
+		String input = sb.toString();
+		
+		String testName = "createHTML_higlightedTextInSingleLineCodeBlock";
+
+		String result = processAndProvideDebugInfo(brightMarkdown, input, testName, OutputType.EMBEDDABLE_HTML_CODE);
+		
+		String expected = "<span><h1>Chapter</h1><ul><li>one</li><li><span>use method call </span><code style=\"background:lightgrey\">"
+				+ "<span>processData(x, </span><span style=\"font-weight: bold;background-color: #f7ea04;\">true</span><span>);</span>"
+				+ "</code></li></ul><p>More text...</p></span>";
+		assertEquals(expected, result);
+	}
+
+	@Test
+	public void createHTML_unclosedParenthesis() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append("# Title\n");
+		sb.append("fetch(\n");
+		
+		String input = sb.toString();
+		
+		String testName = "createHTML_unclosedParenthesis";
+		
+		String result = processAndProvideDebugInfo(input, testName, OutputType.EMBEDDABLE_HTML_CODE);
+		
+		String expected = "<span><h1>Title</h1><p>fetch(</p></span>";
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void createHTML_bulletPointsParenthesisCodeBlocks() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append(" - creating a app:\n");
+		sb.append("    . run ´´´npm install´´´ (or ´´´npm i´´´) to install all dependencies\n");
+
+		String testName = "createHTML_bulletPointsParenthesisCodeBlocks";
+		
+		String result = processAndProvideDebugInfo(sb, testName, OutputType.EMBEDDABLE_HTML_CODE);
+		
+		String expected = "<span><ul><li>creating a app:</li><ol><li><span>run </span><code style=\"background:lightgrey\">"
+				+ "<span>npm install</span></code><span> (or </span><code style=\"background:lightgrey\"><span>npm i</span>"
+				+ "</code><span>) to install all dependencies</span></li></ol></ul></span>"; 
+		assertEquals(expected, result);
+	}
+	
+	@Test
+	public void createHTML_periodAfterCodeBlock() throws Exception{
+		StringBuilder sb = new StringBuilder();
+		sb.append(" - item one\n");
+		sb.append("     - sub item one-one\n");
+		sb.append("     - sub item one-two\n");
+		sb.append(" - column ´´´bla´´´. more text\n");
+		
+		String testName = "createHTML_periodAfterCodeBlock";
+		
+		String result = processAndProvideDebugInfo(sb, testName, OutputType.EMBEDDABLE_HTML_CODE);
+		
+		String expected = "<span><ul><li>item one</li><ul><li>sub item one-one</li><li>sub item one-two</li></ul>"
+				+ "<li><span>column </span><code style=\"background:lightgrey\"><span>bla</span></code>"
+				+ "<span>. more text</span></li></ul></span>";
+		assertEquals(expected, result);
+	}
+	
+
+
 }

@@ -1,7 +1,7 @@
 package de.bright_side.brightmarkdown.base;
 
 public class TestingConstants {
-	public static final boolean WRITING_DEBUG_FILES_ENABLED = false;
+	public static final boolean WRITING_DEBUG_FILES_ENABLED = true;
 	
 	public static final boolean TEST_BRIGHT_MARKDOWN_LOGGING_ACTIVE = false;
 	public static final boolean TEST_BM_UTIL_LOGGING_ACTIVE = false;

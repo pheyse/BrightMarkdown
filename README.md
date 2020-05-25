@@ -189,3 +189,10 @@ table.brightmarkdown tr:nth-child(even) {background-color: #ffffff;}
    - testing: using JUnit 5, renamed test classes
  - Version 1.6.1 (2020-04-26):
    - bugfix for empty input and output type EMBEDDABLE_HTML_CODE
+ - Version 1.7.0 (2020-05-25):
+   - syntax highlighting for SQL, Kotlin, JavaScript, TypeScript
+   - bugfix over-detecting keywords in syntax highlighting
+   - bugfix '.' after code block
+   - bugfix NPE for unclosed parenthesis
+   - special sections in code blocks to format text for highlighting, indicating placeholders or infos
+   - double backticks to indicate code blocks
