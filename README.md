@@ -26,7 +26,7 @@ Created 2017-2019 by Philip Heyse
 		<dependency>
 			<groupId>de.bright-side.brightmarkdown</groupId>
 			<artifactId>brightmarkdown</artifactId>
-			<version>1.6.1</version>
+			<version>1.7.0</version>
 		</dependency>
 [...]
 ```
@@ -34,12 +34,12 @@ Created 2017-2019 by Philip Heyse
 ### Including via Gradle
 ```
 dependencies {
-    implementation 'de.bright-side.brightmarkdown:brightmarkdown:1.6.1'
+    implementation 'de.bright-side.brightmarkdown:brightmarkdown:1.7.0'
 }
 ```
 
 ### Java 8 Legacy version
-For Java 8 please use version "1.6.1-legacy-java8"
+For Java 8 please use version "1.7.0-legacy-java8"
 
 ### get documentation as HTML
 ```java
